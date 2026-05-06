@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Edit3, Save, X, Plus, Trash2, Calendar, History, Download,
-  AlertCircle, TrendingUp, TrendingDown, ChevronRight, Presentation,
+  AlertCircle, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Presentation,
   Check, RotateCcw, Eye, EyeOff, ArrowRight, MessageSquare, Paperclip,
   Send, ChevronDown, ChevronUp, FileText, Star, Sun, Moon, Image,
   Search, Flag, CircleCheck, Clock, Circle, Ban
@@ -844,6 +844,7 @@ export default function App() {
   const [flash,setFlash]=useState(false);
   const [theme,setTheme]=useState("dark");
   const [draftRecordId,setDraftRecordId]=useState(null);
+  const [viewingId,setViewingId]=useState(null); // null=draft, recordId=viewing past meeting
   const timer=useRef(null);
   const apiTimer=useRef(null);
   const dataRef=useRef(null); // always holds latest data — avoids stale closure in poll
@@ -875,9 +876,9 @@ export default function App() {
   // Keep dataRef in sync so the polling closure always sees current data
   useEffect(()=>{ dataRef.current=data; },[data]);
 
-  // Draft auto-save: localStorage at 900ms, Airtable at 15s
+  // Draft auto-save: localStorage at 900ms, Airtable at 15s (skip when viewing past)
   useEffect(()=>{
-    if(!ready) return;
+    if(!ready||viewingId!==null) return;
     clearTimeout(timer.current);
     timer.current=setTimeout(()=>{
       lsSet('mv2:draft',data);
@@ -888,9 +889,9 @@ export default function App() {
     },900);
   },[data,ready]);
 
-  // 5-second poll for collaborative updates
+  // 5-second poll for collaborative updates (skip when viewing past)
   useEffect(()=>{
-    if(!ready||!draftRecordId) return;
+    if(!ready||!draftRecordId||viewingId!==null) return;
     const interval=setInterval(async()=>{
       if(editingSec!==null) return;
       const remote=await apiGet('/api/meetings?draft=1');
@@ -923,10 +924,36 @@ export default function App() {
     if(Array.isArray(list)) setMeetings(list);
     showFlash();
   };
-  const loadMeeting=async(id)=>{ const m=await apiGet(`/api/meetings/${id}`); if(m&&!m.error){setData(hydrate(m));setShowHistory(false);setActive("company_health");} };
+  const loadMeeting=async(id)=>{ const m=await apiGet(`/api/meetings/${id}`); if(m&&!m.error){setData(hydrate(m));setViewingId(id);setShowHistory(false);setActive("company_health");} };
   const deleteMeeting=async(id)=>{ await apiDel(`/api/meetings/${id}`); const list=await apiGet('/api/meetings'); if(Array.isArray(list)) setMeetings(list); };
   const exportData=()=>{ const b=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=`mv_performance_${data.meeting_date}.json`; a.click(); URL.revokeObjectURL(u); };
   const resetDraft=async()=>{ if(!confirm("Reset the current draft to a blank week?")) return; const f={...mkSeed(),id:uid(),meeting_date:todayISO(),meeting_label:`Week of ${fmtDate(todayISO())}`}; if(draftRecordId) apiPut(`/api/meetings/${draftRecordId}`,{data:f}); lsSet('mv2:draft',f); setData(f); };
+
+  // Date change: update both date + label, auto-save handles the Airtable write
+  const handleDateChange=(newDate)=>{
+    if(viewingId) return;
+    setData(prev=>({...prev,meeting_date:newDate,meeting_label:`Week of ${fmtDate(newDate)}`}));
+  };
+
+  // Return to the live draft from a past meeting view
+  const returnToDraft=async()=>{
+    const remote=await apiGet('/api/meetings?draft=1');
+    setData(remote&&!remote.error?hydrate(remote):mkSeed());
+    setViewingId(null);
+    setActive("company_health");
+  };
+
+  // Week navigator: sorted finalized list + current draft at end
+  const sortedMeetings=[...meetings].sort((a,b)=>a.date<b.date?-1:1);
+  const navPos=viewingId?sortedMeetings.findIndex(m=>m.id===viewingId):sortedMeetings.length;
+  const hasPrev=navPos>0;
+  const hasNext=navPos<sortedMeetings.length; // draft is always last
+  const goToPrev=()=>{ if(hasPrev) loadMeeting(sortedMeetings[navPos-1].id); };
+  const goToNext=()=>{
+    if(!hasNext) return;
+    if(navPos===sortedMeetings.length-1) returnToDraft();
+    else loadMeeting(sortedMeetings[navPos+1].id);
+  };
 
   const Sec=SECTIONS.find(s=>s.id===active)?.Component;
 
@@ -945,9 +972,12 @@ export default function App() {
             </div>
           </div>
           <div style={{width:"1px",height:"28px",background:"var(--border)"}}/>
-          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-            <input type="date" value={data.meeting_date} onChange={e=>setData({...data,meeting_date:e.target.value})} style={{background:"transparent",border:"1px solid var(--border)",color:"var(--text)",padding:"4px 10px",borderRadius:"8px",fontSize:"13px"}}/>
-            <Pill label={data.status==="finalized"?"Finalized":"Draft"} variant={data.status==="finalized"?"good":"warn"}/>
+          <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+            <button onClick={goToPrev} disabled={!hasPrev} title="Previous meeting" style={{background:"transparent",border:"1px solid var(--border)",color:hasPrev?"var(--text)":"var(--faint)",borderRadius:"6px",width:"28px",height:"28px",display:"flex",alignItems:"center",justifyContent:"center",cursor:hasPrev?"pointer":"default"}}><ChevronLeft size={13}/></button>
+            <input type="date" value={data.meeting_date||""} onChange={e=>handleDateChange(e.target.value)} readOnly={!!viewingId} style={{background:"transparent",border:"1px solid var(--border)",color:"var(--text)",padding:"4px 10px",borderRadius:"8px",fontSize:"13px",cursor:viewingId?"default":"text"}}/>
+            <button onClick={goToNext} disabled={!hasNext} title="Next meeting" style={{background:"transparent",border:"1px solid var(--border)",color:hasNext?"var(--text)":"var(--faint)",borderRadius:"6px",width:"28px",height:"28px",display:"flex",alignItems:"center",justifyContent:"center",cursor:hasNext?"pointer":"default"}}><ChevronRight size={13}/></button>
+            <Pill label={viewingId?"Past":(data.status==="finalized"?"Finalized":"Draft")} variant={viewingId?"neutral":(data.status==="finalized"?"good":"warn")}/>
+            {viewingId&&<Btn variant="outline" size="sm" onClick={returnToDraft}>← Draft</Btn>}
           </div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
