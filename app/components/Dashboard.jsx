@@ -85,6 +85,8 @@ const localISO = (d=new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).
 const todayISO = () => localISO();
 const nextTuesdayISO = () => { const d=new Date(); const diff=(2-d.getDay()+7)%7||7; d.setDate(d.getDate()+diff); return localISO(d); };
 const fmtDate  = (s) => { if(!s) return ""; const [y,m,dy]=s.split('-').map(Number); return new Date(y,m-1,dy).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}); };
+const fmtDateLong = (s) => { if(!s) return ""; const [y,m,dy]=s.split('-').map(Number); return new Date(y,m-1,dy).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}); };
+const getISOWeek = (s) => { if(!s) return ""; const [y,mo,dy]=s.split('-').map(Number); const d=new Date(y,mo-1,dy); d.setHours(0,0,0,0); d.setDate(d.getDate()+3-(d.getDay()+6)%7); const w1=new Date(d.getFullYear(),0,4); return 1+Math.round(((d-w1)/86400000-3+(w1.getDay()+6)%7)/7); };
 const uid = () => Math.random().toString(36).slice(2,9);
 
 // ─────────────────────────────────────────────────────────
@@ -325,7 +327,7 @@ const NI = ({ value, onChange, prefix="", suffix="" }) => (
 );
 const TI = ({ value, onChange, placeholder="", multi=false, style={} }) =>
   multi?<textarea value={value??""} placeholder={placeholder} rows={2} onChange={e=>onChange(e.target.value)} style={{width:"100%",resize:"vertical",...style}}/>:<input type="text" value={value??""} placeholder={placeholder} onChange={e=>onChange(e.target.value)} style={{width:"100%",...style}}/>;
-const Card = ({ children, style={} }) => <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:"12px",overflow:"hidden",...style}}>{children}</div>;
+const Card = ({ children, style={} }) => <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:"14px",overflow:"hidden",...style}}>{children}</div>;
 const CardHead = ({ title, sub, action }) => (
   <div style={{padding:"14px 18px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
     <div>
@@ -347,15 +349,21 @@ const SHead = ({ owner, title, cadence, editing, onEdit, onSave, onCancel }) => 
     </div>
   </div>
 );
-const Hero = ({ label, value, target, fmt="money", subtext, editing, onChange, onChangeTarget, glow=false }) => {
+const Hero = ({ label, value, target, fmt="money", subtext, editing, onChange, onChangeTarget, glow=false, large=false }) => {
   const fmter=fmt==="money"?fmtM:fmt==="pct"?fmtPct:fmtNum;
   const d=target!==undefined?delta(value,target):null;
   const st=status(d);
+  const valStr=fmter(value);
+  const mainVal=large&&fmt==="money"&&valStr.match(/^(\$[\d.]+)(M|K)$/)
+    ?<>{valStr.match(/^(\$[\d.]+)/)[0]}<span style={{fontSize:"18px",color:"var(--muted)",fontWeight:400,marginLeft:"2px"}}>{valStr.match(/(M|K)$/)?.[0]}</span></>
+    :large&&fmt==="pct"&&valStr.match(/^([\d.]+)%$/)
+    ?<>{valStr.match(/^[\d.]+/)[0]}<span style={{fontSize:"18px",color:"var(--muted)",fontWeight:400,marginLeft:"2px"}}>%</span></>
+    :valStr;
   return (
-    <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"12px",padding:"18px 20px",...(glow&&st==="bad"?{boxShadow:"0 0 20px rgba(212,44,69,0.15)",borderColor:"rgba(212,44,69,0.2)"}:{})}}>
+    <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"14px",padding:large?"22px 24px":"18px 20px",...(glow&&st==="bad"?{boxShadow:"0 0 24px rgba(212,44,69,0.15)",borderColor:"rgba(212,44,69,0.22)"}:{})}}>
       <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px"}}>{label}</div>
       {editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><NI value={value} onChange={onChange} prefix={fmt==="money"?"$":""} suffix={fmt==="pct"?"%":""}/>{target!==undefined&&onChangeTarget&&<div style={{fontSize:"12px",color:"var(--muted)"}}>vs target: <NI value={target} onChange={onChangeTarget} prefix={fmt==="money"?"$":""} suffix={fmt==="pct"?"%":""}/></div>}</div>
-      :<><div className="font-display" style={{fontSize:"34px",fontWeight:400,lineHeight:1,marginBottom:"8px",color:st==="bad"?"var(--red)":st==="warn"?"var(--amber)":"var(--text)"}}>{fmter(value)}</div><div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>{target&&<span className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>vs {fmter(target)}</span>}{d!==null&&<Dt delta={d}/>}{subtext&&<span style={{fontSize:"12px",color:"var(--muted)"}}>{subtext}</span>}</div></>}
+      :<><div className="font-display" style={{fontSize:large?"40px":"34px",fontWeight:400,lineHeight:1,marginBottom:"8px",color:st==="bad"?"var(--red)":st==="warn"?"var(--amber)":"var(--text)"}}>{mainVal}</div><div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>{target&&<span className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>vs {fmter(target)}</span>}{d!==null&&<Dt delta={d}/>}{subtext&&<span style={{fontSize:"12px",color:"var(--muted)"}}>{subtext}</span>}</div></>}
     </div>
   );
 };
@@ -378,7 +386,7 @@ const SectionExtras = ({ cfg={}, onChange }) => {
   return (
     <div style={{marginTop:"28px",marginBottom:"4px"}}>
       {lightboxImg&&<div onClick={()=>setLightboxImg(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}><img src={lightboxImg} style={{maxWidth:"90vw",maxHeight:"85vh",objectFit:"contain",borderRadius:"10px"}} onClick={e=>e.stopPropagation()}/><button onClick={()=>setLightboxImg(null)} style={{position:"absolute",top:20,right:20,background:"var(--card2)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:"50%",width:"32px",height:"32px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}><X size={14}/></button></div>}
-      <div style={{border:"1px solid var(--border)",borderRadius:"12px",overflow:"hidden",background:"var(--card)"}}>
+      <div style={{border:"1px solid var(--border)",borderRadius:"14px",overflow:"hidden",background:"var(--card)"}}>
         {/* Toggle bar */}
         <button onClick={()=>setOpen(!open)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 18px",background:"transparent",border:"none",cursor:"pointer",color:"var(--text)",fontFamily:"inherit"}}>
           <span style={{display:"flex",alignItems:"center",gap:"10px"}}>
@@ -474,16 +482,18 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
   const ch=data.company_health; const set=(p,v)=>onChange(["company_health",...p],v);
   return <div className="fade-up">
     <SHead owner="Jill" title="Company Health" cadence="Weekly · Opens every meeting · Cash verdict in 5 KPIs" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
-    <div className="rg-5" style={{gap:"12px",marginBottom:"20px"}}>
-      <Hero label="MTD Sales" value={ch.mtd_sales_actual} target={ch.mtd_sales_target} editing={editing} onChange={v=>set(["mtd_sales_actual"],v)} onChangeTarget={v=>set(["mtd_sales_target"],v)} glow/>
-      <Hero label="Week vs Target" value={ch.week_actual} target={ch.week_target} editing={editing} onChange={v=>set(["week_actual"],v)} onChangeTarget={v=>set(["week_target"],v)} glow/>
-      <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"12px",padding:"18px 20px"}}>
+    <div className="rg-2" style={{gap:"14px",marginBottom:"14px"}}>
+      <Hero label="MTD Sales" value={ch.mtd_sales_actual} target={ch.mtd_sales_target} editing={editing} onChange={v=>set(["mtd_sales_actual"],v)} onChangeTarget={v=>set(["mtd_sales_target"],v)} glow large/>
+      <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"14px",padding:"22px 24px"}}>
         <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px"}}>Cash Balance</div>
         {editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><NI value={ch.cash_balance} onChange={v=>set(["cash_balance"],v)} prefix="$"/><div style={{fontSize:"12px",color:"var(--muted)"}}>Runway: <NI value={ch.cash_runway_months} onChange={v=>set(["cash_runway_months"],v)} suffix="mo"/></div><div style={{fontSize:"12px",color:"var(--muted)"}}>Last week: <NI value={ch.cash_last_week} onChange={v=>set(["cash_last_week"],v)} prefix="$"/></div></div>
-        :<><div className="font-display" style={{fontSize:"34px",fontWeight:400,lineHeight:1,marginBottom:"8px"}}>{fmtM(ch.cash_balance)}</div><div style={{fontSize:"12px",color:"var(--muted)"}}>{ch.cash_runway_months} months runway</div><div style={{fontSize:"12px",color:"var(--faint)"}}>vs {fmtM(ch.cash_last_week)} last week</div></>}
+        :<><div className="font-display" style={{fontSize:"40px",fontWeight:400,lineHeight:1,marginBottom:"8px"}}>{fmtM(ch.cash_balance).match(/^(\$[\d.]+)/)?.[0]||fmtM(ch.cash_balance)}<span style={{fontSize:"18px",color:"var(--muted)",fontWeight:400,marginLeft:"2px"}}>{fmtM(ch.cash_balance).match(/(M|K)$/)?.[0]||""}</span></div><div style={{fontSize:"12px",color:"var(--muted)"}}>{ch.cash_runway_months} months runway</div><div style={{fontSize:"12px",color:"var(--faint)"}}>vs {fmtM(ch.cash_last_week)} last week</div></>}
       </div>
+    </div>
+    <div className="rg-3" style={{gap:"14px",marginBottom:"20px"}}>
+      <Hero label="Week vs Target" value={ch.week_actual} target={ch.week_target} editing={editing} onChange={v=>set(["week_actual"],v)} onChangeTarget={v=>set(["week_target"],v)} glow/>
       <Hero label="Ads Efficiency Ratio" value={ch.aer_actual} target={ch.aer_target} fmt="pct" subtext={!editing?`Ad spend ${fmtM(ch.ad_spend)}`:null} editing={editing} onChange={v=>set(["aer_actual"],v)} onChangeTarget={v=>set(["aer_target"],v)}/>
-      <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"12px",padding:"18px 20px"}}>
+      <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"14px",padding:"18px 20px"}}>
         <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px"}}>Adspend / Sales</div>
         {editing?<NI value={ch.adspend_pct} onChange={v=>set(["adspend_pct"],v)} suffix="%"/>:<><div className="font-display" style={{fontSize:"34px",fontWeight:400,lineHeight:1,marginBottom:"8px"}}>{fmtPct(ch.adspend_pct)}</div><div className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>{fmtM(ch.adspend_num)} / {fmtM(ch.mtd_sales_actual)}</div></>}
       </div>
@@ -671,7 +681,7 @@ const Masteries = ({ data, editing, onEdit, onSave, onCancel, onChange, onCommen
     <SHead owner="Jaideep" title="Masteries & Certifications" cadence="Weekly · Launch-driven, high-ticket · Cash collection is the catch" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
     <div className="rg-4" style={{gap:"12px",marginBottom:"16px"}}>
       {[["★ Sales MTD","sales_mtd","money"],["★ Cash Collected MTD","cash_collected_mtd","money"],["★ Refund Rate","refund_rate","pct"],["★ Cash Forecast MTD","cash_forecast_mtd","money"]].map(([lbl,k,fmt])=>(
-        <div key={k} style={{background:"linear-gradient(145deg,var(--card2),rgba(123,95,245,0.08))",border:"1px solid rgba(123,95,245,0.15)",borderRadius:"12px",padding:"18px"}}>
+        <div key={k} style={{background:"linear-gradient(145deg,var(--card2),rgba(123,95,245,0.08))",border:"1px solid rgba(123,95,245,0.15)",borderRadius:"14px",padding:"18px"}}>
           <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px"}}>{lbl}</div>
           {editing?<NI value={m[k]} onChange={v=>set([k],v)} prefix={fmt==="money"?"$":""} suffix={fmt==="pct"?"%":""}/>:<div className="font-display" style={{fontSize:"28px",lineHeight:1}}>{fmt==="money"?fmtM(m[k]):fmtPct(m[k])}</div>}
         </div>
@@ -837,7 +847,7 @@ const TranscriptPanel = ({ onImport }) => {
   };
 
   return (
-    <div style={{margin:"28px 0 4px",border:"1px solid var(--border)",borderRadius:"12px",overflow:"hidden",background:"var(--card)"}}>
+    <div style={{margin:"28px 0 4px",border:"1px solid var(--border)",borderRadius:"14px",overflow:"hidden",background:"var(--card)"}}>
       <button onClick={()=>setOpen(!open)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 18px",background:"transparent",border:"none",cursor:"pointer",color:"var(--text)",fontFamily:"inherit"}}>
         <span style={{display:"flex",alignItems:"center",gap:"10px"}}>
           <MessageSquare size={14} style={{color:"var(--purple2)",flexShrink:0}}/>
@@ -1042,6 +1052,7 @@ const MeetingNotesSection = ({ data, onChange, onComment }) => (
 // ─────────────────────────────────────────────────────────
 // SECTIONS REGISTRY  (Refunds & Cost removed)
 // ─────────────────────────────────────────────────────────
+const avatarBg = (name) => { const c=["#7B5FF5","#E8B84B","#2ECC71","#FF4D6A","#FF9B3C","#4ECDC4","#9B7FFF","#1A9950"]; return c[(name.charCodeAt(0)||0)%c.length]; };
 const SECTIONS=[
   {id:"company_health", label:"Company Health", owner:"Jill",    num:"01", Component:CompanyHealth},
   {id:"bu_performance", label:"BU Performance", owner:"Jill",    num:"02", Component:BUPerformance},
@@ -1081,24 +1092,25 @@ const HistoryPanel=({ meetings, onLoad, onClose, onDelete })=>(
 // ─────────────────────────────────────────────────────────
 const DateSelectScreen = ({ draftDate, meetings, onSelectDraft, onSelectPast }) => {
   const sorted=[...meetings].sort((a,b)=>b.date>a.date?1:-1);
+  const draftWeekday=draftDate?new Date(...draftDate.split('-').map((v,i)=>i===1?Number(v)-1:Number(v))).toLocaleDateString("en-US",{weekday:"long"}):"Tuesday";
   return (
-    <div style={{position:"fixed",inset:0,zIndex:100,background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",overflowY:"auto"}}>
-      <div style={{maxWidth:"480px",width:"100%"}}>
-        <div style={{textAlign:"center",marginBottom:"36px"}}>
-          <div style={{width:"52px",height:"52px",borderRadius:"14px",background:"linear-gradient(135deg,var(--purple),var(--purple2))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"24px",fontWeight:700,color:"#fff",margin:"0 auto 16px"}}>M</div>
-          <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"8px"}}>Mindvalley · Revenue Task Force</div>
-          <h1 className="font-display" style={{fontSize:"34px",color:"var(--text)",lineHeight:1.1}}>Revenue Meeting</h1>
+    <div className="fade-up" style={{position:"fixed",inset:0,zIndex:9999,background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",padding:"32px",overflowY:"auto",pointerEvents:"all"}}>
+      <div style={{maxWidth:"640px",width:"100%"}}>
+        <div style={{textAlign:"center",marginBottom:"40px"}}>
+          <div style={{width:"58px",height:"58px",borderRadius:"16px",background:"linear-gradient(135deg,var(--purple),var(--purple2))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",fontWeight:700,color:"#fff",margin:"0 auto 18px",boxShadow:"0 8px 28px rgba(123,95,245,0.4)"}}>M</div>
+          <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"10px"}}>Mindvalley · Revenue Task Force</div>
+          <h1 className="font-display" style={{fontSize:"38px",color:"var(--text)",lineHeight:1.05}}>Revenue Meeting</h1>
           <p style={{fontSize:"14px",color:"var(--muted)",marginTop:"10px"}}>Select a meeting week to open</p>
         </div>
 
         {/* Current draft */}
-        <div onClick={onSelectDraft} style={{border:"1px solid rgba(123,95,245,0.4)",borderRadius:"12px",padding:"18px 22px",marginBottom:"10px",cursor:"pointer",background:"rgba(123,95,245,0.08)",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"border-color 0.15s"}}>
+        <div onClick={onSelectDraft} style={{border:"1.5px solid rgba(123,95,245,0.45)",borderRadius:"14px",padding:"20px 24px",marginBottom:"14px",cursor:"pointer",background:"linear-gradient(135deg,rgba(123,95,245,0.1),rgba(123,95,245,0.04))",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"all 0.15s",boxShadow:"0 0 30px rgba(123,95,245,0.08)"}}>
           <div>
-            <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"4px"}}>Current Draft</div>
-            <div className="font-display" style={{fontSize:"22px",color:"var(--text)"}}>{fmtDate(draftDate)||"Next Tuesday"}</div>
-            <div style={{fontSize:"12px",color:"var(--muted)",marginTop:"2px"}}>Continue editing this week's data</div>
+            <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"5px"}}>Current Draft</div>
+            <div className="font-display" style={{fontSize:"24px",color:"var(--text)"}}>{fmtDate(draftDate)||"Next Tuesday"}</div>
+            <div style={{fontSize:"12px",color:"var(--muted)",marginTop:"3px"}}>{draftWeekday} · Week {getISOWeek(draftDate)||"—"} · Continue editing this week's data</div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"10px",flexShrink:0}}>
             <Pill label="Draft" variant="warn"/>
             <ArrowRight size={16} style={{color:"var(--purple2)"}}/>
           </div>
@@ -1107,18 +1119,23 @@ const DateSelectScreen = ({ draftDate, meetings, onSelectDraft, onSelectPast }) 
         {/* Past meetings */}
         {sorted.length>0&&<>
           <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--faint)",margin:"22px 0 10px"}}>Past Meetings</div>
-          {sorted.map(m=>(
-            <div key={m.id} onClick={()=>onSelectPast(m.id)} style={{border:"1px solid var(--border)",borderRadius:"12px",padding:"14px 22px",marginBottom:"8px",cursor:"pointer",background:"var(--card)",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"border-color 0.15s"}}>
-              <div>
-                <div className="font-display" style={{fontSize:"20px",color:"var(--text)"}}>{fmtDate(m.date)}</div>
-                <div style={{fontSize:"12px",color:"var(--faint)",marginTop:"2px"}}>{m.label||fmtDate(m.date)}</div>
-              </div>
-              <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                <Pill label="Finalized" variant="good"/>
-                <ArrowRight size={16} style={{color:"var(--muted)"}}/>
-              </div>
-            </div>
-          ))}
+          <div className="rg-2" style={{gap:"10px"}}>
+            {sorted.map(m=>{
+              const weekday=m.date?new Date(...m.date.split('-').map((v,i)=>i===1?Number(v)-1:Number(v))).toLocaleDateString("en-US",{weekday:"long"}):"";
+              return (
+                <div key={m.id} onClick={()=>onSelectPast(m.id)} style={{border:"1px solid var(--border)",borderRadius:"14px",padding:"15px 18px",cursor:"pointer",background:"var(--card)",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"all 0.15s"}}>
+                  <div>
+                    <div className="font-display" style={{fontSize:"18px",color:"var(--text)"}}>{fmtDate(m.date)}</div>
+                    <div style={{fontSize:"11px",color:"var(--faint)",marginTop:"2px"}}>{weekday} · Week {getISOWeek(m.date)||"—"}</div>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px",flexShrink:0}}>
+                    <Pill label="Finalized" variant="good"/>
+                    <ArrowRight size={15} style={{color:"var(--muted)"}}/>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </>}
       </div>
     </div>
@@ -1306,7 +1323,7 @@ export default function App() {
       )}
 
       {/* TOP BAR */}
-      <header style={{background:"var(--surface)",borderBottom:"1px solid var(--border)",padding:isMobile?"0 14px":"0 24px",height:"60px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(8px)"}}>
+      <header style={{background:"var(--surface)",borderBottom:"1px solid var(--border)",padding:isMobile?"0 14px":"0 24px",height:"64px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(8px)"}}>
         <div style={{display:"flex",alignItems:"center",gap:isMobile?"10px":"20px"}}>
           <button onClick={()=>setShowDateSelect(true)} title="Home" style={{display:"flex",alignItems:"center",gap:"10px",background:"transparent",border:"none",cursor:"pointer",padding:0}}>
             <div style={{width:"28px",height:"28px",borderRadius:"8px",background:"linear-gradient(135deg,var(--purple),var(--purple2))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",fontWeight:700,color:"#fff"}}>M</div>
@@ -1352,10 +1369,11 @@ export default function App() {
               {SECTIONS.map(s=>{
                 const isActive=active===s.id;
                 const cCount=s.id==="meeting_notes"?(data.section_comments?.meeting_notes?.length||0):(data.section_comments?.[s.id]?.length||0);
-                return <button key={s.id} onClick={()=>{setActive(s.id);setSidebarOpen(false);}} style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",padding:"10px 8px",borderRadius:"8px",textAlign:"left",cursor:"pointer",background:isActive?"rgba(123,95,245,0.15)":"transparent",border:isActive?"1px solid rgba(123,95,245,0.28)":"1px solid transparent",marginBottom:"2px",color:"var(--text)",fontFamily:"inherit",transition:"all 0.12s"}}>
-                  <span style={{fontSize:"10px",fontWeight:700,color:isActive?"var(--gold)":"var(--faint)",fontFamily:"'JetBrains Mono',monospace",width:"22px",flexShrink:0}}>{s.num}</span>
+                return <button key={s.id} onClick={()=>{setActive(s.id);setSidebarOpen(false);}} style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",padding:"10px 10px 10px 14px",borderRadius:"8px",textAlign:"left",cursor:"pointer",background:isActive?"rgba(123,95,245,0.14)":"transparent",border:isActive?"1.5px solid rgba(123,95,245,0.28)":"1.5px solid transparent",marginBottom:"2px",color:"var(--text)",fontFamily:"inherit",transition:"all 0.12s"}}>
+                  <div style={{width:"22px",height:"22px",borderRadius:"50%",background:isActive?"rgba(232,184,75,0.15)":"var(--card2)",border:`1px solid ${isActive?"rgba(232,184,75,0.3)":"var(--border)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"10px",fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:isActive?"var(--gold)":"var(--faint)",flexShrink:0}}>{s.num}</div>
                   <div style={{flex:1}}><div style={{fontSize:"13px",fontWeight:500,color:isActive?"var(--text)":"var(--muted)",lineHeight:1}}>{s.label}</div><div style={{fontSize:"10px",color:isActive?"var(--purple2)":"var(--faint)",marginTop:"2px"}}>{s.owner}</div></div>
                   {cCount>0&&<span style={{background:"rgba(123,95,245,0.2)",color:"var(--purple2)",fontSize:"10px",fontWeight:700,borderRadius:"10px",padding:"1px 6px"}}>{cCount}</span>}
+                  <div style={{width:"18px",height:"18px",borderRadius:"50%",background:avatarBg(s.owner),display:"flex",alignItems:"center",justifyContent:"center",fontSize:"9px",fontWeight:700,color:"#fff",flexShrink:0}}>{s.owner.charAt(0)}</div>
                 </button>;
               })}
             </nav>
@@ -1373,17 +1391,18 @@ export default function App() {
       <div style={{display:"flex",flex:1}}>
         {/* SIDEBAR — desktop only */}
         {!presentMode&&!isMobile&&(
-          <aside style={{width:"216px",background:"var(--surface)",borderRight:"1px solid var(--border)",minHeight:"calc(100vh - 60px)",position:"sticky",top:"60px",alignSelf:"flex-start",display:"flex",flexDirection:"column"}}>
+          <aside style={{width:"216px",background:"var(--surface)",borderRight:"1px solid var(--border)",minHeight:"calc(100vh - 64px)",position:"sticky",top:"64px",alignSelf:"flex-start",display:"flex",flexDirection:"column"}}>
             <div style={{position:"absolute",left:0,top:0,bottom:0,width:"3px",background:"linear-gradient(180deg,var(--purple),rgba(232,184,75,0.6),var(--purple))",borderRadius:"0 2px 2px 0"}}/>
             <nav style={{padding:"14px 12px",flex:1}}>
               <div style={{fontSize:"9px",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:"var(--faint)",padding:"0 6px 10px",display:"flex",alignItems:"center",gap:"6px"}}><Star size={9} style={{color:"var(--gold)"}}/>Sections</div>
               {SECTIONS.map(s=>{
                 const isActive=active===s.id;
                 const cCount=s.id==="meeting_notes"?(data.section_comments?.meeting_notes?.length||0):(data.section_comments?.[s.id]?.length||0);
-                return <button key={s.id} onClick={()=>setActive(s.id)} style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",padding:"8px 8px",borderRadius:"8px",textAlign:"left",cursor:"pointer",background:isActive?"rgba(123,95,245,0.15)":"transparent",border:isActive?"1px solid rgba(123,95,245,0.28)":"1px solid transparent",marginBottom:"2px",color:"var(--text)",fontFamily:"inherit",transition:"all 0.12s"}}>
-                  <span style={{fontSize:"10px",fontWeight:700,color:isActive?"var(--gold)":"var(--faint)",fontFamily:"'JetBrains Mono',monospace",width:"22px",flexShrink:0}}>{s.num}</span>
+                return <button key={s.id} onClick={()=>setActive(s.id)} style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",padding:"8px 10px 8px 14px",borderRadius:"8px",textAlign:"left",cursor:"pointer",background:isActive?"rgba(123,95,245,0.14)":"transparent",border:isActive?"1.5px solid rgba(123,95,245,0.28)":"1.5px solid transparent",marginBottom:"2px",color:"var(--text)",fontFamily:"inherit",transition:"all 0.12s"}}>
+                  <div style={{width:"22px",height:"22px",borderRadius:"50%",background:isActive?"rgba(232,184,75,0.15)":"var(--card2)",border:`1px solid ${isActive?"rgba(232,184,75,0.3)":"var(--border)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"10px",fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:isActive?"var(--gold)":"var(--faint)",flexShrink:0,transition:"all 0.12s"}}>{s.num}</div>
                   <div style={{flex:1}}><div style={{fontSize:"13px",fontWeight:500,color:isActive?"var(--text)":"var(--muted)",lineHeight:1}}>{s.label}</div><div style={{fontSize:"10px",color:isActive?"var(--purple2)":"var(--faint)",marginTop:"2px"}}>{s.owner}</div></div>
                   {cCount>0&&<span style={{background:"rgba(123,95,245,0.2)",color:"var(--purple2)",fontSize:"10px",fontWeight:700,borderRadius:"10px",padding:"1px 6px"}}>{cCount}</span>}
+                  <div style={{width:"18px",height:"18px",borderRadius:"50%",background:avatarBg(s.owner),display:"flex",alignItems:"center",justifyContent:"center",fontSize:"9px",fontWeight:700,color:"#fff",flexShrink:0}}>{s.owner.charAt(0)}</div>
                 </button>;
               })}
             </nav>
