@@ -11,7 +11,7 @@ import {
 // GLOBAL STYLES + LIGHT/DARK TOKENS
 // ─────────────────────────────────────────────────────────
 const STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,300;9..144,0,400;9..144,0,500;9..144,1,300;9..144,1,400&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,300;9..144,0,400;9..144,0,500;9..144,1,300;9..144,1,400&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ── DARK (default) ── */
 :root {
@@ -23,6 +23,8 @@ const STYLES = `
   --red-bg:rgba(255,77,106,0.12); --amb-bg:rgba(255,155,60,0.12); --grn-bg:rgba(46,204,113,0.12);
   --input-bg:rgba(255,255,255,0.05); --input-border:rgba(255,255,255,0.12);
   --scroll-thumb:rgba(123,95,245,0.3); --hover-row:rgba(123,95,245,0.05);
+  --dur-fast:120ms; --dur-base:200ms; --dur-slow:320ms;
+  --ease-std:cubic-bezier(0.2,0,0,1); --ease-in:cubic-bezier(0,0,0,1); --ease-out:cubic-bezier(0.4,0,1,1);
 }
 /* ── LIGHT ── */
 [data-theme="light"] {
@@ -38,7 +40,7 @@ const STYLES = `
 
 * { box-sizing:border-box; margin:0; padding:0; }
 html, body { overflow-x:hidden; max-width:100%; }
-body { background:var(--bg); color:var(--text); font-family:'Sora',system-ui,sans-serif; font-size:14px; line-height:1.5; }
+body { background:var(--bg); color:var(--text); font-family:'Plus Jakarta Sans',system-ui,sans-serif; font-size:14px; line-height:1.5; }
 .font-display { font-family:'Fraunces',Georgia,serif; font-optical-sizing:auto; }
 .font-mono    { font-family:'JetBrains Mono',monospace; font-variant-numeric:tabular-nums; }
 ::-webkit-scrollbar { width:4px; height:4px; }
