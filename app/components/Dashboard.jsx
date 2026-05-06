@@ -1105,6 +1105,8 @@ const DateSelectScreen = ({ meetings, onSelect, onCreate }) => {
   const currentDraft=meetings.find(m=>m.status==="Draft"&&(!m.date||m.date>=today));
   const pastMeetings=[...meetings]
     .filter(m=>!(m.status==="Draft"&&(!m.date||m.date>=today)))
+    .filter(m=>!currentDraft||m.id!==currentDraft.id)
+    .filter(m=>!currentDraft||!m.date||m.date!==currentDraft.date)
     .sort((a,b)=>b.date>a.date?-1:1);
 
   const mkWeekday=d=>{if(!d) return ""; const [y,mo,dy]=d.split('-').map(Number); return new Date(y,mo-1,dy).toLocaleDateString("en-US",{weekday:"long"});};
