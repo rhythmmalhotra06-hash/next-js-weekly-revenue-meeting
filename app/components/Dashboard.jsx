@@ -4,7 +4,7 @@ import {
   AlertCircle, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Presentation,
   Check, RotateCcw, Eye, EyeOff, ArrowRight, MessageSquare, Paperclip,
   Send, ChevronDown, ChevronUp, FileText, Star, Sun, Moon, Image,
-  Search, Flag, CircleCheck, Clock, Circle, Ban
+  Search, Flag, CircleCheck, Clock, Circle, Ban, Menu
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────
@@ -59,6 +59,18 @@ select option { background:var(--card); color:var(--text); }
 .ai-row:hover { background:var(--hover-row) !important; }
 .progress-bar { height:4px; background:rgba(127,127,127,0.15); border-radius:2px; overflow:hidden; }
 .progress-fill { height:100%; border-radius:2px; transition:width 0.5s ease; }
+
+/* ── RESPONSIVE GRID CLASSES (inline gridTemplateColumns blocks @media overrides) ── */
+.rg-5 { display:grid; grid-template-columns:repeat(5,1fr); }
+.rg-4 { display:grid; grid-template-columns:repeat(4,1fr); }
+.rg-3 { display:grid; grid-template-columns:repeat(3,1fr); }
+.rg-2 { display:grid; grid-template-columns:1fr 1fr; }
+
+@media (max-width:767px) {
+  .rg-5,.rg-4 { grid-template-columns:1fr 1fr; }
+  .rg-3,.rg-2 { grid-template-columns:1fr; }
+  .mob-hide   { display:none !important; }
+}
 `;
 
 // ─────────────────────────────────────────────────────────
@@ -451,7 +463,7 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
   const ch=data.company_health; const set=(p,v)=>onChange(["company_health",...p],v);
   return <div className="fade-up">
     <SHead owner="Jill" title="Company Health" cadence="Weekly · Opens every meeting · Cash verdict in 5 KPIs" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:"12px",marginBottom:"20px"}}>
+    <div className="rg-5" style={{gap:"12px",marginBottom:"20px"}}>
       <Hero label="MTD Sales" value={ch.mtd_sales_actual} target={ch.mtd_sales_target} editing={editing} onChange={v=>set(["mtd_sales_actual"],v)} onChangeTarget={v=>set(["mtd_sales_target"],v)} glow/>
       <Hero label="Week vs Target" value={ch.week_actual} target={ch.week_target} editing={editing} onChange={v=>set(["week_actual"],v)} onChangeTarget={v=>set(["week_target"],v)} glow/>
       <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"12px",padding:"18px 20px"}}>
@@ -465,7 +477,7 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
         {editing?<NI value={ch.adspend_pct} onChange={v=>set(["adspend_pct"],v)} suffix="%"/>:<><div className="font-display" style={{fontSize:"34px",fontWeight:400,lineHeight:1,marginBottom:"8px"}}>{fmtPct(ch.adspend_pct)}</div><div className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>{fmtM(ch.adspend_num)} / {fmtM(ch.mtd_sales_actual)}</div></>}
       </div>
     </div>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px",marginBottom:"16px"}}>
+    <div className="rg-2" style={{gap:"16px",marginBottom:"16px"}}>
       <Card><CardHead title="3 Must-Solve Issues This Week"/>
         <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:"14px"}}>
           {ch.must_solve.map((m,i)=><div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start"}}>
@@ -481,7 +493,7 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
         </div>
       </Card>
     </div>
-    <Card><CardHead title="Full Year Rolling Forecast (3+9)"/><div style={{padding:"16px",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"16px"}}>
+    <Card><CardHead title="Full Year Rolling Forecast (3+9)"/><div className="rg-4" style={{padding:"16px",gap:"16px"}}>
       {[["Sales",`$${ch.rf.sa}M`,`$${ch.rf.st}M target`,ch.rf.yoy<0?"bad":"good"],["GP Margin",fmtPct(ch.rf.gp),"above target","good"],["EBITDA",`$${ch.rf.ea}M (${ch.rf.ep}%)`,`${ch.rf.et}% target`,"bad"],["OPEX",`$${ch.rf.oa}M (${ch.rf.op}%)`,`${ch.rf.ot}% target`,"bad"],["Ad Spend",`$${ch.rf.ada}M (${ch.rf.adp}%)`,`$${ch.rf.adly}M LY`,"good"],["Headcount",`${ch.rf.hcp}%`,`${ch.rf.hct}% target`,"bad"],["G&A",`$${ch.rf.ga}M`,"","neutral"],["Net Income",`$${ch.rf.ni}M (${ch.rf.nip}%)`,""," neutral"],["Cash",`$${ch.rf.c}M`,`$${ch.rf.ct}M tgt / $${ch.rf.cly}M LY`,"bad"]].map(([l,v,sub,st],i)=>(
         <div key={i} style={{borderLeft:`2px solid ${st==="good"?"var(--green)":st==="bad"?"var(--red)":st==="warn"?"var(--amber)":"var(--border)"}`,paddingLeft:"12px"}}>
           <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",marginBottom:"4px"}}>{l}</div>
@@ -549,7 +561,7 @@ const Membership = ({ data, editing, onEdit, onSave, onCancel, onChange, onComme
   const net=(m.new_subs||0)-(m.lost_subs||0);
   return <div className="fade-up">
     <SHead owner="Rafay" title="Membership" cadence="Weekly · Acquisition + funnel health for the subscription business" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px",marginBottom:"16px"}}>
+    <div className="rg-3" style={{gap:"12px",marginBottom:"16px"}}>
       {[{l:"★ Sales",main:editing?<NI value={m.sales_actual} onChange={v=>set(["sales_actual"],v)} prefix="$"/>:<div className="font-display" style={{fontSize:"36px",lineHeight:1}}>{fmtM(m.sales_actual)}</div>,sub:editing?<div style={{fontSize:"12px",color:"var(--muted)"}}>target: <NI value={m.sales_target} onChange={v=>set(["sales_target"],v)} prefix="$"/></div>:<div style={{fontSize:"13px",color:"var(--muted)"}}>vs {fmtM(m.sales_target)} ({Math.round((m.sales_actual/m.sales_target)*100)}%)</div>},{l:"★ Net New Subscribers",main:editing?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px"}}><div><div style={{fontSize:"11px",color:"var(--muted)",marginBottom:"3px"}}>+New</div><NI value={m.new_subs} onChange={v=>set(["new_subs"],v)}/></div><div><div style={{fontSize:"11px",color:"var(--muted)",marginBottom:"3px"}}>–Lost</div><NI value={m.lost_subs} onChange={v=>set(["lost_subs"],v)}/></div></div>:<div className="font-display" style={{fontSize:"36px",lineHeight:1,color:net<0?"var(--red)":"var(--green)"}}>{net>=0?"+":""}{net}</div>,sub:<div style={{fontSize:"13px",color:"var(--muted)"}}>+{fmtNum(m.new_subs)} new · –{fmtNum(m.lost_subs)} lost</div>},{l:"★ ROAS 30D",main:editing?<NI value={m.roas_30d} onChange={v=>set(["roas_30d"],v)} suffix="%"/>:<div className="font-display" style={{fontSize:"36px",lineHeight:1}}>{fmtPct(m.roas_30d,0)}</div>,sub:<div style={{fontSize:"13px",color:"var(--muted)"}}>Funnel acquisition health</div>}].map((h,i)=>(
         <div key={i} style={{background:"linear-gradient(145deg,var(--card2),rgba(123,95,245,0.08))",border:"1px solid rgba(123,95,245,0.15)",borderRadius:"14px",padding:"20px"}}>
           <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px"}}>{h.l}</div>
@@ -557,7 +569,7 @@ const Membership = ({ data, editing, onEdit, onSave, onCancel, onChange, onComme
         </div>
       ))}
     </div>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px",marginBottom:"16px"}}>
+    <div className="rg-3" style={{gap:"12px",marginBottom:"16px"}}>
       <Card><CardHead title="CPL"/><div style={{padding:"16px"}}>{editing?<div style={{display:"flex",flexDirection:"column",gap:"8px"}}><div>Current: <NI value={m.cpl} onChange={v=>set(["cpl"],v)} prefix="$"/></div><div>Last mo: <NI value={m.cpl_prev} onChange={v=>set(["cpl_prev"],v)} prefix="$"/></div></div>:<><div className="font-display" style={{fontSize:"24px",marginBottom:"6px"}}>${m.cpl}</div><div style={{fontSize:"12px",color:"var(--muted)"}}>vs ${m.cpl_prev} last month <Dt delta={m.cpl_prev?((m.cpl-m.cpl_prev)/m.cpl_prev)*100:null}/></div></>}</div></Card>
       <Card><CardHead title="Subscriber Growth Daily"/><div style={{padding:"16px"}}>{editing?<div style={{display:"flex",flexDirection:"column",gap:"8px"}}><div>+New/day: <NI value={m.new_per_day} onChange={v=>set(["new_per_day"],v)}/></div><div>–Lost/day: <NI value={m.lost_per_day} onChange={v=>set(["lost_per_day"],v)}/></div></div>:<div style={{display:"flex",alignItems:"baseline",gap:"12px"}}><div><span className="font-display" style={{fontSize:"24px",color:"var(--green)"}}>+{m.new_per_day}</span><span style={{fontSize:"12px",color:"var(--muted)",marginLeft:"4px"}}>new</span></div><span style={{color:"var(--faint)"}}>·</span><div><span className="font-display" style={{fontSize:"24px",color:"var(--red)"}}>–{m.lost_per_day}</span><span style={{fontSize:"12px",color:"var(--muted)",marginLeft:"4px"}}>lost</span></div></div>}</div></Card>
       <Card><CardHead title="Refund Rate"/><div style={{padding:"16px"}}>{editing?<div style={{display:"flex",flexDirection:"column",gap:"8px"}}><div>Current: <NI value={m.refund_rate} onChange={v=>set(["refund_rate"],v)} suffix="%"/></div><div>LY: <NI value={m.refund_rate_ly} onChange={v=>set(["refund_rate_ly"],v)} suffix="%"/></div></div>:<><div className="font-display" style={{fontSize:"24px",marginBottom:"6px"}}>{fmtPct(m.refund_rate)}</div><div style={{fontSize:"12px",color:"var(--muted)"}}>vs {fmtPct(m.refund_rate_ly)} LY <Dt delta={m.refund_rate-m.refund_rate_ly} suffix="pp"/></div></>}</div></Card>
@@ -593,7 +605,7 @@ const Masteries = ({ data, editing, onEdit, onSave, onCancel, onChange, onCommen
   const m=data.masteries; const set=(p,v)=>onChange(["masteries",...p],v);
   return <div className="fade-up">
     <SHead owner="Jaideep" title="Masteries & Certifications" cadence="Weekly · Launch-driven, high-ticket · Cash collection is the catch" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"12px",marginBottom:"16px"}}>
+    <div className="rg-4" style={{gap:"12px",marginBottom:"16px"}}>
       {[["★ Sales MTD","sales_mtd","money"],["★ Cash Collected MTD","cash_collected_mtd","money"],["★ Refund Rate","refund_rate","pct"],["★ Cash Forecast MTD","cash_forecast_mtd","money"]].map(([lbl,k,fmt])=>(
         <div key={k} style={{background:"linear-gradient(145deg,var(--card2),rgba(123,95,245,0.08))",border:"1px solid rgba(123,95,245,0.15)",borderRadius:"12px",padding:"18px"}}>
           <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px"}}>{lbl}</div>
@@ -626,20 +638,20 @@ const Events = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment }
         <div><div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"8px"}}>Active Campaign</div><h3 className="font-display" style={{fontSize:"22px",color:"var(--text)"}}>{editing?<TI value={e.campaign_name} onChange={v=>set(["campaign_name"],v)} style={{fontSize:"18px",width:"340px"}}/>:e.campaign_name}</h3></div>
         <Pill label={`ADS ${e.ads_status} · ROAS ${e.ads_roas}%`} variant={e.ads_status==="PAUSED"?"warn":"good"}/>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"20px"}}>
+      <div className="rg-4" style={{gap:"20px"}}>
         <div><div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--muted)",marginBottom:"10px"}}>Tickets Sold</div>{editing?<div style={{display:"flex",gap:"6px"}}><NI value={e.tickets_sold} onChange={v=>set(["tickets_sold"],v)}/><span style={{color:"var(--faint)"}}>/</span><NI value={e.tickets_target} onChange={v=>set(["tickets_target"],v)}/></div>:<><div className="font-display" style={{fontSize:"30px",lineHeight:1,marginBottom:"6px"}}>{fmtNum(e.tickets_sold)} <span style={{color:"var(--faint)",fontSize:"16px"}}>/ {fmtNum(e.tickets_target)}</span></div><div className="font-mono" style={{fontSize:"12px",color:"var(--muted)",marginBottom:"8px"}}>{tPct.toFixed(1)}% · {e.tickets_remaining} remaining</div><div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,tPct)}%`,background:"linear-gradient(90deg,var(--purple),var(--purple2))"}}/></div></>}</div>
         <div><div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--muted)",marginBottom:"10px"}}>Net Revenue</div>{editing?<div style={{display:"flex",gap:"6px"}}><NI value={e.revenue_actual} onChange={v=>set(["revenue_actual"],v)} prefix="$"/><span style={{color:"var(--faint)"}}>/</span><NI value={e.revenue_target} onChange={v=>set(["revenue_target"],v)} prefix="$"/></div>:<><div className="font-display" style={{fontSize:"30px",lineHeight:1,marginBottom:"6px"}}>{fmtM(e.revenue_actual)}</div><div className="font-mono" style={{fontSize:"12px",color:"var(--muted)",marginBottom:"8px"}}>{rPct.toFixed(1)}% of {fmtM(e.revenue_target)}</div><div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,rPct)}%`,background:"linear-gradient(90deg,var(--green),rgba(46,204,113,0.5))"}}/></div></>}</div>
         <div><div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--muted)",marginBottom:"10px"}}>Refund Rate (Running)</div>{editing?<NI value={e.refund_rate} onChange={v=>set(["refund_rate"],v)} suffix="%"/>:<><div className="font-display" style={{fontSize:"30px",lineHeight:1,color:"var(--amber)",marginBottom:"6px"}}>{fmtPct(e.refund_rate)}</div><div className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>{fmtM(e.refund_dollars)} of {fmtM(e.gross_revenue)} gross</div></>}</div>
         <div><div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--muted)",marginBottom:"10px"}}>Sales Velocity 7D</div>{editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><NI value={e.velocity_7d} onChange={v=>set(["velocity_7d"],v)} suffix="tix"/><div style={{fontSize:"12px",color:"var(--muted)"}}>per day: <NI value={e.velocity_per_day} onChange={v=>set(["velocity_per_day"],v)}/></div></div>:<><div className="font-display" style={{fontSize:"30px",lineHeight:1,marginBottom:"6px"}}>{e.velocity_7d}</div><div className="font-mono" style={{fontSize:"12px",color:e.velocity_per_day<e.velocity_required?"var(--red)":"var(--green)"}}>~{e.velocity_per_day}/day · need {e.velocity_required}/day</div></>}</div>
       </div>
     </div>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}>
+    <div className="rg-2" style={{gap:"16px"}}>
       <Card><CardHead title="Refund Forecast"/><div style={{padding:"16px"}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px",marginBottom:"14px"}}>{[["2025 Actual",`${e.refund_2025_actual}%`,"neutral"],["Current Running",fmtPct(e.refund_rate),"warn"],["Initial Forecast",`${e.refund_forecast_initial}%`,"neutral"]].map(([l,v,st])=><div key={l}><div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",color:"var(--muted)",marginBottom:"4px"}}>{l}</div><div className="font-mono" style={{fontSize:"18px",color:st==="warn"?"var(--amber)":"var(--text)"}}>{v}</div></div>)}</div>
+        <div className="rg-3" style={{gap:"12px",marginBottom:"14px"}}>{[["2025 Actual",`${e.refund_2025_actual}%`,"neutral"],["Current Running",fmtPct(e.refund_rate),"warn"],["Initial Forecast",`${e.refund_forecast_initial}%`,"neutral"]].map(([l,v,st])=><div key={l}><div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",color:"var(--muted)",marginBottom:"4px"}}>{l}</div><div className="font-mono" style={{fontSize:"18px",color:st==="warn"?"var(--amber)":"var(--text)"}}>{v}</div></div>)}</div>
         <div style={{background:"var(--red-bg)",border:"1px solid rgba(212,44,69,0.2)",borderRadius:"8px",padding:"12px"}}><div style={{fontSize:"13px",fontWeight:600,color:"var(--red)",marginBottom:"4px"}}>Worst-case: up to {e.refund_forecast_worst}%</div><div style={{fontSize:"12px",color:"var(--muted)",lineHeight:1.6}}>Jet fuel crisis. At 30%: ~{fmtM(e.refund_worst_dollars)} (+{fmtM(e.refund_worst_delta)} vs today)</div></div>
       </div></Card>
       <Card><CardHead title="Speakers · Venue"/><div style={{padding:"16px"}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px",marginBottom:"14px"}}>
+        <div className="rg-2" style={{gap:"16px",marginBottom:"14px"}}>
           <div><div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",color:"var(--muted)",marginBottom:"4px"}}>Confirmed</div><div className="font-display" style={{fontSize:"30px"}}>{editing?<NI value={e.speakers_confirmed} onChange={v=>set(["speakers_confirmed"],v)}/>:e.speakers_confirmed}</div><div style={{fontSize:"12px",color:"var(--muted)"}}>teachers</div></div>
           <div><div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",color:"var(--muted)",marginBottom:"6px"}}>In Negotiation ({e.speakers_negotiating.length})</div><div style={{display:"flex",flexDirection:"column",gap:"3px"}}>{e.speakers_negotiating.map((s,i)=><span key={i} style={{fontSize:"12px",color:"var(--muted)"}}>· {s}</span>)}</div></div>
         </div>
@@ -657,7 +669,7 @@ const States = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment }
   return <div className="fade-up">
     <SHead owner="Moniek" title="States" cadence="Weekly · Physical product · Inventory + expiry is the binding constraint" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
     {Object.entries(s).filter(([k])=>k!=="notes").every(([,v])=>v===null)&&!editing&&<div style={{background:"var(--amb-bg)",border:"1px solid rgba(212,120,0,0.2)",borderRadius:"10px",padding:"12px 16px",marginBottom:"16px",fontSize:"13px",color:"var(--amber)",display:"flex",alignItems:"center",gap:"10px"}}><AlertCircle size={14}/>Numbers not yet entered for this week.</div>}
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}>
+    <div className="rg-2" style={{gap:"16px"}}>
       {groups.map(g=><Card key={g.title}><CardHead title={g.title}/><div style={{padding:"16px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
         {g.fields.map(([lbl,k,u])=><div key={k}><div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",color:"var(--muted)",marginBottom:"4px"}}>{lbl}</div>{editing?<NI value={s[k]} onChange={v=>set([k],v)} prefix={u==="$"?"$":""} suffix={u==="%"||u==="d"?u:""}/>:<div className="font-mono" style={{fontSize:"15px"}}>{s[k]===null?<span style={{color:"var(--faint)"}}>—</span>:(u==="$"?`$${s[k]}`:u==="%"?`${s[k]}%`:`${s[k]}${u}`)}</div>}</div>)}
       </div></Card>)}
@@ -674,7 +686,7 @@ const Product = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment 
   const sLabels={green:"On Track",amber:"At Risk",red:"Off Track",black:"TBD"};
   return <div className="fade-up">
     <SHead owner="Dario" title="Product" cadence="Weekly · Platform metrics + roadmap aligned with marketing" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px",marginBottom:"16px"}}>
+    <div className="rg-3" style={{gap:"12px",marginBottom:"16px"}}>
       {[{lbl:"★ Platform Revenue MTD",main:editing?<NI value={p.platform_revenue_mtd} onChange={v=>set("platform_revenue_mtd",v)} prefix="$"/>:<div className="font-display" style={{fontSize:"32px",lineHeight:1}}>{p.platform_revenue_mtd===null?<span style={{color:"var(--faint)"}}>TBD</span>:fmtM(p.platform_revenue_mtd)}</div>,sub:null},{lbl:"★ Engagement",main:editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><NI value={p.engagement} onChange={v=>set("engagement",v)} suffix="%"/><div style={{fontSize:"12px",color:"var(--muted)"}}>WoW pp: <NI value={p.engagement_wow} onChange={v=>set("engagement_wow",v)}/></div></div>:<div className="font-display" style={{fontSize:"32px",lineHeight:1}}>{fmtPct(p.engagement)}</div>,sub:<div style={{fontSize:"12px",color:"var(--muted)",display:"flex",gap:"6px"}}><Dt delta={p.engagement_wow} suffix="pp"/> WoW · <Dt delta={p.engagement_target_delta} suffix="pp"/> vs Q2</div>},{lbl:"★ Activation",main:editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><NI value={p.activation} onChange={v=>set("activation",v)} suffix="%"/><div style={{fontSize:"12px",color:"var(--muted)"}}>WoW pp: <NI value={p.activation_wow} onChange={v=>set("activation_wow",v)}/></div></div>:<div className="font-display" style={{fontSize:"32px",lineHeight:1}}>{fmtPct(p.activation)}</div>,sub:<div style={{fontSize:"12px",color:"var(--muted)",display:"flex",gap:"6px"}}><Dt delta={p.activation_wow} suffix="pp"/> WoW · <Dt delta={p.activation_target_delta} suffix="pp"/> vs Q2</div>}].map((h,i)=>(
         <div key={i} style={{background:"linear-gradient(145deg,var(--card2),rgba(123,95,245,0.08))",border:"1px solid rgba(123,95,245,0.15)",borderRadius:"14px",padding:"20px"}}>
           <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px"}}>{h.lbl}</div>
@@ -682,7 +694,7 @@ const Product = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment 
         </div>
       ))}
     </div>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px",marginBottom:"16px"}}>
+    <div className="rg-3" style={{gap:"12px",marginBottom:"16px"}}>
       {[["Revenue, Refund & Retention","revenue_refund_retention","MoM / vs Q2"],["Acquisition / Checkout","acquisition_checkout","WoW / vs Q2"],["Engagement & Transformation","engagement_transformation","WoW / vs Q2"]].map(([title,key,note])=>(
         <Card key={key}><CardHead title={title} sub={note}/><div style={{padding:"12px"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:"12px"}}><tbody>
           {p[key].map((r,i)=>{ const k1=r.mom!==undefined?"mom":"wow"; return <tr key={i} style={{borderBottom:"1px solid var(--border)"}} className="ai-row">
@@ -818,7 +830,7 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
     </div>
 
     {/* Stats row */}
-    <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:"10px",marginBottom:"20px"}}>
+    <div className="rg-5" style={{gap:"10px",marginBottom:"20px"}}>
       {stats.map((s,i)=><div key={i} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:"10px",padding:"12px 16px",borderTop:`3px solid ${s.c}`}}>
         <div className="font-display" style={{fontSize:"26px",color:s.c,lineHeight:1,marginBottom:"4px"}}>{s.n}</div>
         <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:"var(--muted)"}}>{s.l}</div>
@@ -913,6 +925,55 @@ const HistoryPanel=({ meetings, onLoad, onClose, onDelete })=>(
 );
 
 // ─────────────────────────────────────────────────────────
+// DATE SELECT SCREEN
+// ─────────────────────────────────────────────────────────
+const DateSelectScreen = ({ draftDate, meetings, onSelectDraft, onSelectPast }) => {
+  const sorted=[...meetings].sort((a,b)=>b.date>a.date?1:-1);
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:100,background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",overflowY:"auto"}}>
+      <div style={{maxWidth:"480px",width:"100%"}}>
+        <div style={{textAlign:"center",marginBottom:"36px"}}>
+          <div style={{width:"52px",height:"52px",borderRadius:"14px",background:"linear-gradient(135deg,var(--purple),var(--purple2))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"24px",fontWeight:700,color:"#fff",margin:"0 auto 16px"}}>M</div>
+          <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"8px"}}>Mindvalley · Revenue Task Force</div>
+          <h1 className="font-display" style={{fontSize:"34px",color:"var(--text)",lineHeight:1.1}}>Revenue Meeting</h1>
+          <p style={{fontSize:"14px",color:"var(--muted)",marginTop:"10px"}}>Select a meeting week to open</p>
+        </div>
+
+        {/* Current draft */}
+        <div onClick={onSelectDraft} style={{border:"1px solid rgba(123,95,245,0.4)",borderRadius:"12px",padding:"18px 22px",marginBottom:"10px",cursor:"pointer",background:"rgba(123,95,245,0.08)",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"border-color 0.15s"}}>
+          <div>
+            <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"4px"}}>Current Draft</div>
+            <div className="font-display" style={{fontSize:"22px",color:"var(--text)"}}>{fmtDate(draftDate)||"Next Tuesday"}</div>
+            <div style={{fontSize:"12px",color:"var(--muted)",marginTop:"2px"}}>Continue editing this week's data</div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+            <Pill label="Draft" variant="warn"/>
+            <ArrowRight size={16} style={{color:"var(--purple2)"}}/>
+          </div>
+        </div>
+
+        {/* Past meetings */}
+        {sorted.length>0&&<>
+          <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--faint)",margin:"22px 0 10px"}}>Past Meetings</div>
+          {sorted.map(m=>(
+            <div key={m.id} onClick={()=>onSelectPast(m.id)} style={{border:"1px solid var(--border)",borderRadius:"12px",padding:"14px 22px",marginBottom:"8px",cursor:"pointer",background:"var(--card)",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"border-color 0.15s"}}>
+              <div>
+                <div className="font-display" style={{fontSize:"20px",color:"var(--text)"}}>{fmtDate(m.date)}</div>
+                <div style={{fontSize:"12px",color:"var(--faint)",marginTop:"2px"}}>{m.label||fmtDate(m.date)}</div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                <Pill label="Finalized" variant="good"/>
+                <ArrowRight size={16} style={{color:"var(--muted)"}}/>
+              </div>
+            </div>
+          ))}
+        </>}
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────
 // MAIN APP
 // ─────────────────────────────────────────────────────────
 export default function App() {
@@ -922,15 +983,28 @@ export default function App() {
   const [draftBak,setDraftBak]=useState(null);
   const [meetings,setMeetings]=useState([]);
   const [showHistory,setShowHistory]=useState(false);
+  const [showDateSelect,setShowDateSelect]=useState(false);
   const [presentMode,setPresentMode]=useState(false);
   const [ready,setReady]=useState(false);
   const [flash,setFlash]=useState(false);
-  const [theme,setTheme]=useState("dark");
+  const [theme,setTheme]=useState("light");
   const [draftRecordId,setDraftRecordId]=useState(null);
   const [viewingId,setViewingId]=useState(null); // null=draft, recordId=viewing past meeting
+  const [isMobile,setIsMobile]=useState(false);
+  const [sidebarOpen,setSidebarOpen]=useState(false);
   const timer=useRef(null);
   const apiTimer=useRef(null);
   const dataRef=useRef(null); // always holds latest data — avoids stale closure in poll
+  const localDirty=useRef(false); // true when local changes haven't been flushed to Airtable yet
+
+  // Detect mobile viewport
+  useEffect(()=>{
+    const mq=window.matchMedia('(max-width:767px)');
+    const h=e=>setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    mq.addEventListener('change',h);
+    return ()=>mq.removeEventListener('change',h);
+  },[]);
 
   // Init: hydrate from Airtable draft, fall back to localStorage, create if neither exists
   useEffect(()=>{(async()=>{
@@ -954,6 +1028,7 @@ export default function App() {
     const list=await apiGet('/api/meetings');
     if(Array.isArray(list)) setMeetings(list);
     setReady(true);
+    setShowDateSelect(true); // always show date picker on load
   })();},[]);
 
   // Keep dataRef in sync so the polling closure always sees current data
@@ -962,12 +1037,16 @@ export default function App() {
   // Draft auto-save: localStorage at 900ms, Airtable at 15s (skip when viewing past)
   useEffect(()=>{
     if(!ready||viewingId!==null) return;
+    localDirty.current=true; // mark unsaved local changes so poll won't overwrite them
     clearTimeout(timer.current);
     timer.current=setTimeout(()=>{
       lsSet('mv2:draft',data);
       clearTimeout(apiTimer.current);
-      apiTimer.current=setTimeout(()=>{
-        if(draftRecordId) apiPut(`/api/meetings/${draftRecordId}`,{data});
+      apiTimer.current=setTimeout(async()=>{
+        if(draftRecordId){
+          await apiPut(`/api/meetings/${draftRecordId}`,{data});
+          localDirty.current=false; // Airtable is now in sync
+        }
       },15000);
     },900);
   },[data,ready]);
@@ -976,7 +1055,7 @@ export default function App() {
   useEffect(()=>{
     if(!ready||!draftRecordId||viewingId!==null) return;
     const interval=setInterval(async()=>{
-      if(editingSec!==null) return;
+      if(editingSec!==null||localDirty.current) return; // skip if user has unpushed changes
       const remote=await apiGet('/api/meetings?draft=1');
       if(remote&&!remote.error&&JSON.stringify(remote)!==JSON.stringify(dataRef.current)){
         setData(hydrate(remote));
@@ -1026,6 +1105,18 @@ export default function App() {
     setActive("company_health");
   };
 
+  // Date picker selection
+  const selectFromDatePicker=async(id)=>{
+    if(id==='draft'){
+      setViewingId(null);
+      setActive("company_health");
+    } else {
+      const m=await apiGet(`/api/meetings/${id}`);
+      if(m&&!m.error){ setData(hydrate(m)); setViewingId(id); setActive("company_health"); }
+    }
+    setShowDateSelect(false);
+  };
+
   // Week navigator: sorted finalized list + current draft at end
   const sortedMeetings=[...meetings].sort((a,b)=>a.date<b.date?-1:1);
   const navPos=viewingId?sortedMeetings.findIndex(m=>m.id===viewingId):sortedMeetings.length;
@@ -1044,39 +1135,89 @@ export default function App() {
     <div data-theme={theme} style={{minHeight:"100vh",background:"var(--bg)",color:"var(--text)",display:"flex",flexDirection:"column"}}>
       <style>{STYLES}</style>
 
+      {/* DATE SELECT SPLASH */}
+      {showDateSelect&&ready&&(
+        <DateSelectScreen
+          draftDate={data.meeting_date}
+          meetings={meetings}
+          onSelectDraft={()=>selectFromDatePicker('draft')}
+          onSelectPast={selectFromDatePicker}
+        />
+      )}
+
+      {/* LOADING SPLASH */}
+      {!ready&&(
+        <div style={{position:"fixed",inset:0,zIndex:100,background:"var(--bg)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"16px"}}>
+          <div style={{width:"48px",height:"48px",borderRadius:"12px",background:"linear-gradient(135deg,var(--purple),var(--purple2))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px",fontWeight:700,color:"#fff"}}>M</div>
+          <div style={{fontSize:"13px",color:"var(--muted)"}}>Loading meeting data…</div>
+        </div>
+      )}
+
       {/* TOP BAR */}
-      <header style={{background:"var(--surface)",borderBottom:"1px solid var(--border)",padding:"0 24px",height:"60px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(8px)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:"20px"}}>
+      <header style={{background:"var(--surface)",borderBottom:"1px solid var(--border)",padding:isMobile?"0 14px":"0 24px",height:"60px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(8px)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:isMobile?"10px":"20px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
             <div style={{width:"28px",height:"28px",borderRadius:"8px",background:"linear-gradient(135deg,var(--purple),var(--purple2))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",fontWeight:700,color:"#fff"}}>M</div>
-            <div>
+            {!isMobile&&<div>
               <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:"var(--gold)",lineHeight:1}}>Mindvalley · Revenue Task Force</div>
               <div className="font-display" style={{fontSize:"16px",color:"var(--text)",lineHeight:1.2,marginTop:"2px"}}>Revenue Meeting</div>
-            </div>
+            </div>}
           </div>
-          <div style={{width:"1px",height:"28px",background:"var(--border)"}}/>
+          {!isMobile&&<div style={{width:"1px",height:"28px",background:"var(--border)"}}/>}
           <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-            <button onClick={goToPrev} disabled={!hasPrev} title="Previous meeting" style={{background:"transparent",border:"1px solid var(--border)",color:hasPrev?"var(--text)":"var(--faint)",borderRadius:"6px",width:"28px",height:"28px",display:"flex",alignItems:"center",justifyContent:"center",cursor:hasPrev?"pointer":"default"}}><ChevronLeft size={13}/></button>
-            <input type="date" value={data.meeting_date||""} onChange={e=>handleDateChange(e.target.value)} readOnly={!!viewingId} style={{background:"transparent",border:"1px solid var(--border)",color:"var(--text)",padding:"4px 10px",borderRadius:"8px",fontSize:"13px",cursor:viewingId?"default":"text"}}/>
-            <button onClick={goToNext} disabled={!hasNext} title="Next meeting" style={{background:"transparent",border:"1px solid var(--border)",color:hasNext?"var(--text)":"var(--faint)",borderRadius:"6px",width:"28px",height:"28px",display:"flex",alignItems:"center",justifyContent:"center",cursor:hasNext?"pointer":"default"}}><ChevronRight size={13}/></button>
+            {!isMobile&&<button onClick={goToPrev} disabled={!hasPrev} title="Previous meeting" style={{background:"transparent",border:"1px solid var(--border)",color:hasPrev?"var(--text)":"var(--faint)",borderRadius:"6px",width:"28px",height:"28px",display:"flex",alignItems:"center",justifyContent:"center",cursor:hasPrev?"pointer":"default"}}><ChevronLeft size={13}/></button>}
+            <button onClick={()=>setShowDateSelect(true)} title="Change week" style={{background:"transparent",border:"1px solid var(--border)",color:"var(--text)",padding:"4px 10px",borderRadius:"8px",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"6px",fontFamily:"inherit"}}><Calendar size={13} style={{color:"var(--purple2)"}}/>{isMobile?(data.meeting_date||"Week"):(fmtDate(data.meeting_date)||"Select week")}</button>
+            {!isMobile&&<button onClick={goToNext} disabled={!hasNext} title="Next meeting" style={{background:"transparent",border:"1px solid var(--border)",color:hasNext?"var(--text)":"var(--faint)",borderRadius:"6px",width:"28px",height:"28px",display:"flex",alignItems:"center",justifyContent:"center",cursor:hasNext?"pointer":"default"}}><ChevronRight size={13}/></button>}
             <Pill label={viewingId?"Past":(data.status==="finalized"?"Finalized":"Draft")} variant={viewingId?"neutral":(data.status==="finalized"?"good":"warn")}/>
-            {viewingId&&<Btn variant="outline" size="sm" onClick={returnToDraft}>← Draft</Btn>}
+            {!isMobile&&viewingId&&<Btn variant="outline" size="sm" onClick={returnToDraft}>← Draft</Btn>}
           </div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-          {flash&&<span style={{fontSize:"12px",color:"var(--green)",fontWeight:600,display:"flex",alignItems:"center",gap:"4px"}}><Check size={12}/>Saved</span>}
-          <button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")} title="Toggle light/dark" style={{background:"var(--card)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:"8px",width:"34px",height:"34px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>{theme==="dark"?<Sun size={15}/>:<Moon size={15}/>}</button>
-          <Btn variant="ghost" size="sm" onClick={()=>setPresentMode(!presentMode)}>{presentMode?<EyeOff size={13}/>:<Presentation size={13}/>}{presentMode?"Exit":"Present"}</Btn>
-          <Btn variant="ghost" size="sm" onClick={()=>setShowHistory(true)}><History size={13}/>History ({meetings.length})</Btn>
-          <Btn variant="ghost" size="sm" onClick={exportData}><Download size={13}/>Export</Btn>
-          <Btn variant="ghost" size="sm" onClick={resetDraft}><RotateCcw size={13}/></Btn>
-          <Btn variant="gold" size="sm" onClick={saveMeeting}><Save size={13}/>Save Meeting</Btn>
+          {!isMobile&&flash&&<span style={{fontSize:"12px",color:"var(--green)",fontWeight:600,display:"flex",alignItems:"center",gap:"4px"}}><Check size={12}/>Saved</span>}
+          {!isMobile&&<button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")} title="Toggle light/dark" style={{background:"var(--card)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:"8px",width:"34px",height:"34px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>{theme==="dark"?<Sun size={15}/>:<Moon size={15}/>}</button>}
+          {!isMobile&&<Btn variant="ghost" size="sm" onClick={()=>setPresentMode(!presentMode)}>{presentMode?<EyeOff size={13}/>:<Presentation size={13}/>}{presentMode?"Exit":"Present"}</Btn>}
+          {!isMobile&&<Btn variant="ghost" size="sm" onClick={()=>setShowHistory(true)}><History size={13}/>History ({meetings.length})</Btn>}
+          {!isMobile&&<Btn variant="ghost" size="sm" onClick={exportData}><Download size={13}/>Export</Btn>}
+          {!isMobile&&<Btn variant="ghost" size="sm" onClick={resetDraft}><RotateCcw size={13}/></Btn>}
+          <Btn variant="gold" size="sm" onClick={saveMeeting}><Save size={13}/>{!isMobile&&"Save Meeting"}</Btn>
+          {isMobile&&<button onClick={()=>setSidebarOpen(o=>!o)} style={{background:"var(--card)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:"8px",width:"36px",height:"36px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}><Menu size={17}/></button>}
         </div>
       </header>
 
+      {/* MOBILE SIDEBAR DRAWER */}
+      {isMobile&&sidebarOpen&&(
+        <div onClick={()=>setSidebarOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:200,display:"flex"}}>
+          <aside onClick={e=>e.stopPropagation()} style={{width:"280px",background:"var(--surface)",borderRight:"1px solid var(--border)",display:"flex",flexDirection:"column",height:"100%",overflowY:"auto"}}>
+            <div style={{padding:"14px 16px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <span style={{fontSize:"13px",fontWeight:700,color:"var(--text)"}}>Sections</span>
+              <button onClick={()=>setSidebarOpen(false)} style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer",display:"flex",alignItems:"center"}}><X size={18}/></button>
+            </div>
+            {viewingId&&<div style={{padding:"10px 14px",borderBottom:"1px solid var(--border)"}}><Btn variant="outline" size="sm" onClick={()=>{returnToDraft();setSidebarOpen(false);}}>← Back to Draft</Btn></div>}
+            <nav style={{padding:"12px 10px",flex:1}}>
+              {SECTIONS.map(s=>{
+                const isActive=active===s.id;
+                const cCount=s.id==="meeting_notes"?(data.section_comments?.meeting_notes?.length||0):(data.section_comments?.[s.id]?.length||0);
+                return <button key={s.id} onClick={()=>{setActive(s.id);setSidebarOpen(false);}} style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",padding:"10px 8px",borderRadius:"8px",textAlign:"left",cursor:"pointer",background:isActive?"rgba(123,95,245,0.15)":"transparent",border:isActive?"1px solid rgba(123,95,245,0.28)":"1px solid transparent",marginBottom:"2px",color:"var(--text)",fontFamily:"inherit",transition:"all 0.12s"}}>
+                  <span style={{fontSize:"10px",fontWeight:700,color:isActive?"var(--gold)":"var(--faint)",fontFamily:"'JetBrains Mono',monospace",width:"22px",flexShrink:0}}>{s.num}</span>
+                  <div style={{flex:1}}><div style={{fontSize:"13px",fontWeight:500,color:isActive?"var(--text)":"var(--muted)",lineHeight:1}}>{s.label}</div><div style={{fontSize:"10px",color:isActive?"var(--purple2)":"var(--faint)",marginTop:"2px"}}>{s.owner}</div></div>
+                  {cCount>0&&<span style={{background:"rgba(123,95,245,0.2)",color:"var(--purple2)",fontSize:"10px",fontWeight:700,borderRadius:"10px",padding:"1px 6px"}}>{cCount}</span>}
+                </button>;
+              })}
+            </nav>
+            <div style={{padding:"12px 14px",borderTop:"1px solid var(--border)",display:"flex",flexDirection:"column",gap:"6px"}}>
+              <button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")} style={{display:"flex",alignItems:"center",gap:"10px",background:"none",border:"1px solid var(--border)",borderRadius:"8px",padding:"10px 12px",color:"var(--text)",cursor:"pointer",fontFamily:"inherit",fontSize:"13px"}}>{theme==="dark"?<Sun size={15}/>:<Moon size={15}/>}<span>Toggle {theme==="dark"?"Light":"Dark"} mode</span></button>
+              <button onClick={()=>{setShowHistory(true);setSidebarOpen(false);}} style={{display:"flex",alignItems:"center",gap:"10px",background:"none",border:"1px solid var(--border)",borderRadius:"8px",padding:"10px 12px",color:"var(--text)",cursor:"pointer",fontFamily:"inherit",fontSize:"13px"}}><History size={15}/><span>History ({meetings.length})</span></button>
+              <button onClick={()=>{exportData();setSidebarOpen(false);}} style={{display:"flex",alignItems:"center",gap:"10px",background:"none",border:"1px solid var(--border)",borderRadius:"8px",padding:"10px 12px",color:"var(--text)",cursor:"pointer",fontFamily:"inherit",fontSize:"13px"}}><Download size={15}/><span>Export JSON</span></button>
+              <button onClick={()=>{setPresentMode(!presentMode);setSidebarOpen(false);}} style={{display:"flex",alignItems:"center",gap:"10px",background:"none",border:"1px solid var(--border)",borderRadius:"8px",padding:"10px 12px",color:"var(--text)",cursor:"pointer",fontFamily:"inherit",fontSize:"13px"}}><Presentation size={15}/><span>Present mode</span></button>
+              <button onClick={()=>{setSidebarOpen(false);resetDraft();}} style={{display:"flex",alignItems:"center",gap:"10px",background:"var(--red-bg)",border:"1px solid rgba(255,77,106,0.2)",borderRadius:"8px",padding:"10px 12px",color:"var(--red)",cursor:"pointer",fontFamily:"inherit",fontSize:"13px"}}><RotateCcw size={15}/><span>Reset to blank week</span></button>
+            </div>
+          </aside>
+        </div>
+      )}
+
       <div style={{display:"flex",flex:1}}>
-        {/* SIDEBAR */}
-        {!presentMode&&(
+        {/* SIDEBAR — desktop only */}
+        {!presentMode&&!isMobile&&(
           <aside style={{width:"216px",background:"var(--surface)",borderRight:"1px solid var(--border)",minHeight:"calc(100vh - 60px)",position:"sticky",top:"60px",alignSelf:"flex-start",display:"flex",flexDirection:"column"}}>
             <div style={{position:"absolute",left:0,top:0,bottom:0,width:"3px",background:"linear-gradient(180deg,var(--purple),rgba(232,184,75,0.6),var(--purple))",borderRadius:"0 2px 2px 0"}}/>
             <nav style={{padding:"14px 12px",flex:1}}>
@@ -1099,7 +1240,7 @@ export default function App() {
         )}
 
         {/* MAIN */}
-        <main style={{flex:1,padding:"32px",maxWidth:presentMode?"100%":"1260px"}}>
+        <main style={{flex:1,padding:isMobile?"16px":"32px",maxWidth:presentMode?"100%":"1260px"}}>
           {presentMode&&<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"24px",paddingBottom:"20px",borderBottom:"1px solid var(--border)"}}>
             <div><div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"6px"}}>Presenting · {data.meeting_label}</div><h1 className="font-display" style={{fontSize:"38px",color:"var(--text)"}}>{SECTIONS.find(s=>s.id===active)?.label}</h1></div>
             <div style={{display:"flex",gap:"4px"}}>{SECTIONS.map(s=><button key={s.id} onClick={()=>setActive(s.id)} style={{height:"8px",width:active===s.id?"24px":"8px",borderRadius:"4px",background:active===s.id?"var(--gold)":"rgba(127,127,127,0.2)",border:"none",cursor:"pointer",transition:"all 0.2s"}}/>)}</div>
