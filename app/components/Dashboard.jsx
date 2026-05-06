@@ -1110,8 +1110,8 @@ const DateSelectScreen = ({ meetings, onSelect, onCreate }) => {
   const mkWeekday=d=>{if(!d) return ""; const [y,mo,dy]=d.split('-').map(Number); return new Date(y,mo-1,dy).toLocaleDateString("en-US",{weekday:"long"});};
 
   return (
-    <div className="fade-up" style={{position:"fixed",inset:0,zIndex:9999,background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",padding:"32px",overflowY:"auto",pointerEvents:"all"}}>
-      <div style={{maxWidth:"640px",width:"100%"}}>
+    <div className="fade-up" style={{position:"fixed",inset:0,zIndex:9999,background:"var(--bg)",overflowY:"auto",pointerEvents:"all"}}>
+      <div style={{maxWidth:"640px",width:"100%",margin:"0 auto",padding:"48px 32px 80px"}}>
 
         {/* Hero */}
         <div style={{textAlign:"center",marginBottom:"40px"}}>
@@ -1162,8 +1162,8 @@ const DateSelectScreen = ({ meetings, onSelect, onCreate }) => {
             {pastMeetings.map(m=>(
               <div key={m.id} onClick={()=>onSelect(m)} style={{border:"1px solid var(--border)",borderRadius:"14px",padding:"15px 18px",cursor:"pointer",background:"var(--card)",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"all 0.15s"}}>
                 <div>
-                  <div className="font-display" style={{fontSize:"18px",color:"var(--text)"}}>{fmtDate(m.date)||m.label}</div>
-                  <div style={{fontSize:"11px",color:"var(--faint)",marginTop:"2px"}}>{mkWeekday(m.date)} · Week {getISOWeek(m.date)||"—"}</div>
+                  <div className="font-display" style={{fontSize:"18px",color:"var(--text)"}}>{fmtDate(m.date)||m.label||"Untitled meeting"}</div>
+                  {m.date&&<div style={{fontSize:"11px",color:"var(--faint)",marginTop:"2px"}}>{mkWeekday(m.date)} · Week {getISOWeek(m.date)}</div>}
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:"8px",flexShrink:0}}>
                   <Pill label={m.status==="Draft"?"Draft":"Finalized"} variant={m.status==="Draft"?"warn":"good"}/>
