@@ -101,7 +101,7 @@ const apiPost = async (path,body) => { try { const r=await fetch(path,{method:"P
 const apiPut = async (path,body) => { try { await fetch(path,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); } catch {} };
 const apiDel = async (path) => { try { await fetch(path,{method:"DELETE"}); } catch {} };
 
-const emptyPageCfg = () => ({ header_image:null, header_text:"", page_notes:"" });
+const emptyPageCfg = () => ({ header_image:null, header_text:"", page_notes:"", page_notes_2:"" });
 
 // ─────────────────────────────────────────────────────────
 // SEED DATA
@@ -370,11 +370,11 @@ const compressImage = (dataUrl) => new Promise((res) => {
 });
 
 const SectionExtras = ({ cfg={}, onChange }) => {
-  const [open, setOpen]=useState(!!(cfg.header_image||cfg.header_text||cfg.page_notes));
+  const [open, setOpen]=useState(!!(cfg.header_image||cfg.header_text||cfg.page_notes||cfg.page_notes_2));
   const [lightboxImg, setLightboxImg]=useState(null);
   const fileRef=useRef();
   const handleFile=async(e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=async(ev)=>{ onChange({...cfg,header_image:await compressImage(ev.target.result)}); setOpen(true); }; r.readAsDataURL(f); e.target.value=""; };
-  const hasContent=!!(cfg.header_image||cfg.header_text||cfg.page_notes);
+  const hasContent=!!(cfg.header_image||cfg.header_text||cfg.page_notes||cfg.page_notes_2);
   return (
     <div style={{marginTop:"28px",marginBottom:"4px"}}>
       {lightboxImg&&<div onClick={()=>setLightboxImg(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}><img src={lightboxImg} style={{maxWidth:"90vw",maxHeight:"85vh",objectFit:"contain",borderRadius:"10px"}} onClick={e=>e.stopPropagation()}/><button onClick={()=>setLightboxImg(null)} style={{position:"absolute",top:20,right:20,background:"var(--card2)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:"50%",width:"32px",height:"32px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}><X size={14}/></button></div>}
@@ -415,10 +415,15 @@ const SectionExtras = ({ cfg={}, onChange }) => {
             <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--gold)",marginBottom:"8px"}}>Custom header</div>
             <input type="text" value={cfg.header_text||""} onChange={e=>onChange({...cfg,header_text:e.target.value})} placeholder="Override section title for this week…" style={{width:"100%",fontFamily:"'Fraunces',serif",fontSize:"17px"}}/>
           </div>
-          {/* Notes */}
+          {/* Notes 1 */}
           <div>
-            <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--gold)",marginBottom:"8px"}}>Briefing notes</div>
+            <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--gold)",marginBottom:"8px"}}>Pre-meeting briefing</div>
             <textarea value={cfg.page_notes||""} onChange={e=>onChange({...cfg,page_notes:e.target.value})} placeholder="Context, key observations, or preparation notes for this section…" rows={3} style={{width:"100%",resize:"vertical",lineHeight:1.7}}/>
+          </div>
+          {/* Notes 2 */}
+          <div>
+            <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--gold)",marginBottom:"8px"}}>Post-meeting / Key takeaways</div>
+            <textarea value={cfg.page_notes_2||""} onChange={e=>onChange({...cfg,page_notes_2:e.target.value})} placeholder="Decisions made, follow-ups, key quotes, or anything that came up in discussion…" rows={3} style={{width:"100%",resize:"vertical",lineHeight:1.7}}/>
           </div>
         </div>}
       </div>
@@ -484,29 +489,66 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
       </div>
     </div>
     <div className="rg-2" style={{gap:"16px",marginBottom:"16px"}}>
-      <Card><CardHead title="3 Must-Solve Issues This Week"/>
+      <Card><CardHead title="3 Must-Solve Issues This Week" action={editing&&<Btn variant="ghost" size="sm" onClick={()=>set(["must_solve"],[...ch.must_solve,{owner:"",title:"New issue",detail:""}])}><Plus size={12}/>Add</Btn>}/>
         <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:"14px"}}>
+          {ch.must_solve.length===0&&!editing&&<p style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic"}}>No must-solve issues added yet. Click "Edit numbers" to add.</p>}
           {ch.must_solve.map((m,i)=><div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start"}}>
             <div style={{width:"3px",minHeight:"44px",background:"var(--red)",borderRadius:"2px",flexShrink:0,marginTop:"4px"}}/>
-            {editing?<div style={{flex:1,display:"flex",flexDirection:"column",gap:"6px"}}><div style={{display:"flex",gap:"8px"}}><TI value={m.title} onChange={v=>{const n=[...ch.must_solve];n[i]={...n[i],title:v};set(["must_solve"],n);}} style={{width:"120px"}}/><TI value={m.owner} onChange={v=>{const n=[...ch.must_solve];n[i]={...n[i],owner:v};set(["must_solve"],n);}} style={{width:"90px"}}/></div><TI value={m.detail} onChange={v=>{const n=[...ch.must_solve];n[i]={...n[i],detail:v};set(["must_solve"],n);}} multi/></div>
-            :<div style={{flex:1}}><div style={{display:"flex",alignItems:"baseline",gap:"10px",marginBottom:"3px"}}><span className="font-display" style={{fontSize:"17px",color:"var(--text)"}}>{m.title}</span><span style={{fontSize:"11px",color:"var(--purple2)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em"}}>→ {m.owner}</span></div><p style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.6}}>{m.detail}</p></div>}
+            {editing
+              ?<div style={{flex:1,display:"flex",flexDirection:"column",gap:"6px"}}>
+                <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+                  <TI value={m.title} onChange={v=>{const n=[...ch.must_solve];n[i]={...n[i],title:v};set(["must_solve"],n);}} placeholder="Issue title" style={{flex:1}}/>
+                  <TI value={m.owner} onChange={v=>{const n=[...ch.must_solve];n[i]={...n[i],owner:v};set(["must_solve"],n);}} placeholder="Owner" style={{width:"90px"}}/>
+                  <button onClick={()=>set(["must_solve"],ch.must_solve.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--faint)",cursor:"pointer",padding:"4px"}}><Trash2 size={13}/></button>
+                </div>
+                <TI value={m.detail} onChange={v=>{const n=[...ch.must_solve];n[i]={...n[i],detail:v};set(["must_solve"],n);}} multi placeholder="Detail — impact, why it matters, current status…"/>
+              </div>
+              :<div style={{flex:1}}><div style={{display:"flex",alignItems:"baseline",gap:"10px",marginBottom:"3px"}}><span className="font-display" style={{fontSize:"17px",color:"var(--text)"}}>{m.title}</span><span style={{fontSize:"11px",color:"var(--purple2)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em"}}>→ {m.owner}</span></div><p style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.6}}>{m.detail}</p></div>}
           </div>)}
         </div>
       </Card>
-      <Card><CardHead title="Forward Cash Risk"/>
+      <Card><CardHead title="Forward Cash Risk" action={editing&&<Btn variant="ghost" size="sm" onClick={()=>set(["forward_risks"],[...ch.forward_risks,"New risk — describe the scenario and financial exposure"])}><Plus size={12}/>Add</Btn>}/>
         <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:"10px"}}>
-          {ch.forward_risks.map((r,i)=><div key={i} style={{display:"flex",gap:"10px",alignItems:"flex-start",background:"var(--red-bg)",border:"1px solid rgba(212,44,69,0.15)",borderRadius:"8px",padding:"12px 14px"}}><AlertCircle size={14} style={{color:"var(--red)",flexShrink:0,marginTop:"2px"}}/>{editing?<TI value={r} onChange={v=>{const n=[...ch.forward_risks];n[i]=v;set(["forward_risks"],n);}} multi style={{flex:1}}/>:<p style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.6}}>{r}</p>}</div>)}
+          {ch.forward_risks.length===0&&!editing&&<p style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic"}}>No forward risks added yet. Click "Edit numbers" to add.</p>}
+          {ch.forward_risks.map((r,i)=><div key={i} style={{display:"flex",gap:"10px",alignItems:"flex-start",background:"var(--red-bg)",border:"1px solid rgba(212,44,69,0.15)",borderRadius:"8px",padding:"12px 14px"}}>
+            <AlertCircle size={14} style={{color:"var(--red)",flexShrink:0,marginTop:"2px"}}/>
+            {editing
+              ?<><TI value={r} onChange={v=>{const n=[...ch.forward_risks];n[i]=v;set(["forward_risks"],n);}} multi style={{flex:1}} placeholder="Describe the risk scenario and financial exposure…"/>
+                <button onClick={()=>set(["forward_risks"],ch.forward_risks.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--faint)",cursor:"pointer",padding:"4px",flexShrink:0}}><Trash2 size={13}/></button></>
+              :<p style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.6,flex:1}}>{r}</p>}
+          </div>)}
         </div>
       </Card>
     </div>
-    <Card><CardHead title="Full Year Rolling Forecast (3+9)"/><div className="rg-4" style={{padding:"16px",gap:"16px"}}>
-      {[["Sales",`$${ch.rf.sa}M`,`$${ch.rf.st}M target`,ch.rf.yoy<0?"bad":"good"],["GP Margin",fmtPct(ch.rf.gp),"above target","good"],["EBITDA",`$${ch.rf.ea}M (${ch.rf.ep}%)`,`${ch.rf.et}% target`,"bad"],["OPEX",`$${ch.rf.oa}M (${ch.rf.op}%)`,`${ch.rf.ot}% target`,"bad"],["Ad Spend",`$${ch.rf.ada}M (${ch.rf.adp}%)`,`$${ch.rf.adly}M LY`,"good"],["Headcount",`${ch.rf.hcp}%`,`${ch.rf.hct}% target`,"bad"],["G&A",`$${ch.rf.ga}M`,"","neutral"],["Net Income",`$${ch.rf.ni}M (${ch.rf.nip}%)`,""," neutral"],["Cash",`$${ch.rf.c}M`,`$${ch.rf.ct}M tgt / $${ch.rf.cly}M LY`,"bad"]].map(([l,v,sub,st],i)=>(
-        <div key={i} style={{borderLeft:`2px solid ${st==="good"?"var(--green)":st==="bad"?"var(--red)":st==="warn"?"var(--amber)":"var(--border)"}`,paddingLeft:"12px"}}>
-          <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",marginBottom:"4px"}}>{l}</div>
-          <div className="font-mono" style={{fontSize:"14px",color:st==="bad"?"var(--red)":st==="good"?"var(--green)":"var(--text)"}}>{v} <span style={{color:st==="good"?"var(--green)":st==="bad"?"var(--red)":"transparent"}}>{st==="good"?"✓":st==="bad"?"✗":""}</span></div>
-          {sub&&<div className="font-mono" style={{fontSize:"11px",color:"var(--faint)",marginTop:"2px"}}>{sub}</div>}
+    <Card><CardHead title="Full Year Rolling Forecast (3+9)"/>
+      {editing
+        ?<div style={{padding:"16px"}}>
+          <p style={{fontSize:"12px",color:"var(--muted)",marginBottom:"14px",fontStyle:"italic"}}>All figures in $M unless labelled. Fill in what you have — blanks show "—" in view mode.</p>
+          <div className="rg-4" style={{gap:"12px"}}>
+            {[{g:"Sales",f:[["sa","Actual","$M"],["st","Target","$M"],["yoy","YoY","%"]]},{g:"Margins",f:[["gp","GP %","%"],["ea","EBITDA Act.","$M"],["ep","EBITDA %","%"],["et","EBITDA Tgt.","%"]]},{g:"Costs",f:[["oa","OPEX","$M"],["op","OPEX %","%"],["ot","OPEX Tgt.","%"],["ada","AdSpend","$M"],["adp","AdSpend %","%"],["adly","AdSpend LY","$M"],["hcp","HC %","%"],["hct","HC Tgt.","%"],["ga","G&A","$M"]]},{g:"Bottom Line",f:[["ni","Net Inc.","$M"],["nip","NI %","%"],["c","Cash","$M"],["ct","Cash Tgt.","$M"],["cly","Cash LY","$M"]]}].map(({g,f})=>(
+              <div key={g} style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"8px",padding:"12px"}}>
+                <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:"var(--gold)",marginBottom:"10px"}}>{g}</div>
+                <div style={{display:"flex",flexDirection:"column",gap:"7px"}}>
+                  {f.map(([k,label,unit])=>(
+                    <div key={k} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"8px"}}>
+                      <span style={{fontSize:"11px",color:"var(--muted)",flexShrink:0}}>{label}</span>
+                      <div style={{display:"flex",alignItems:"center",gap:"3px"}}><NI value={ch.rf[k]} onChange={v=>set(["rf",k],v)}/><span style={{fontSize:"10px",color:"var(--faint)"}}>{unit}</span></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      ))}</div>
+        :<div className="rg-4" style={{padding:"16px",gap:"16px"}}>
+          {[["Sales",`$${ch.rf.sa}M`,`$${ch.rf.st}M target`,ch.rf.yoy<0?"bad":"good"],["GP Margin",fmtPct(ch.rf.gp),"above target","good"],["EBITDA",`$${ch.rf.ea}M (${ch.rf.ep}%)`,`${ch.rf.et}% target`,"bad"],["OPEX",`$${ch.rf.oa}M (${ch.rf.op}%)`,`${ch.rf.ot}% target`,"bad"],["Ad Spend",`$${ch.rf.ada}M (${ch.rf.adp}%)`,`$${ch.rf.adly}M LY`,"good"],["Headcount",`${ch.rf.hcp}%`,`${ch.rf.hct}% target`,"bad"],["G&A",`$${ch.rf.ga}M`,"","neutral"],["Net Income",`$${ch.rf.ni}M (${ch.rf.nip}%)`,""," neutral"],["Cash",`$${ch.rf.c}M`,`$${ch.rf.ct}M tgt / $${ch.rf.cly}M LY`,"bad"]].map(([l,v,sub,st],i)=>(
+            <div key={i} style={{borderLeft:`2px solid ${st==="good"?"var(--green)":st==="bad"?"var(--red)":st==="warn"?"var(--amber)":"var(--border)"}`,paddingLeft:"12px"}}>
+              <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",marginBottom:"4px"}}>{l}</div>
+              <div className="font-mono" style={{fontSize:"14px",color:st==="bad"?"var(--red)":st==="good"?"var(--green)":"var(--text)"}}>{v} <span style={{color:st==="good"?"var(--green)":st==="bad"?"var(--red)":"transparent"}}>{st==="good"?"✓":st==="bad"?"✗":""}</span></div>
+              {sub&&<div className="font-mono" style={{fontSize:"11px",color:"var(--faint)",marginTop:"2px"}}>{sub}</div>}
+            </div>
+          ))}
+        </div>}
     </Card>
     <SectionExtras cfg={data.page_config?.company_health||{}} onChange={v=>onChange(["page_config","company_health"],v)}/>
     <CommentsPanel comments={data.section_comments?.company_health} onChange={onComment} sectionLabel="Company Health"/>
@@ -518,6 +560,8 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
 // ─────────────────────────────────────────────────────────
 const BUPerformance = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment }) => {
   const rows=data.bu_performance, total=data.bu_total;
+  const autoTarget=rows.reduce((s,r)=>s+(parseFloat(r.target)||0),0);
+  const autoActual=rows.reduce((s,r)=>s+(parseFloat(r.actual)||0),0);
   return <div className="fade-up">
     <SHead owner="Jill" title="BU Performance Snapshot" cadence="Weekly · Whole-company verdict before BU walk-throughs · MTD only" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
     <Card><div style={{overflowX:"auto"}}>
@@ -540,15 +584,15 @@ const BUPerformance = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
           ); })}
           <tr style={{background:"rgba(123,95,245,0.08)"}}>
             <td style={{padding:"14px",fontFamily:"'Fraunces',serif",fontSize:"17px",color:"var(--purple2)"}}>Total Company</td>
-            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(total.target)}</td>
-            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(total.actual)}</td>
-            <td style={{padding:"14px",textAlign:"right",color:"var(--red)"}} className="font-mono">–{fmtM(Math.abs(total.actual-total.target))}</td>
-            <td style={{padding:"14px",textAlign:"right"}}><Dt delta={delta(total.actual,total.target)}/></td>
-            <td style={{padding:"14px",textAlign:"right"}}><Pill label="Red" variant="bad"/></td>
-            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtPct(total.yoy,0)}</td>
-            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtPct(total.ytd_ebitda,0)}</td>
-            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtPct(total.fy_ebitda,0)}</td>
-            <td/>
+            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(autoTarget)}</td>
+            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(autoActual)}</td>
+            <td style={{padding:"14px",textAlign:"right",color:autoActual<autoTarget?"var(--red)":"var(--green)"}} className="font-mono">{autoActual>=autoTarget?"+":"–"}{fmtM(Math.abs(autoActual-autoTarget))}</td>
+            <td style={{padding:"14px",textAlign:"right"}}><Dt delta={delta(autoActual,autoTarget)}/></td>
+            <td style={{padding:"14px",textAlign:"right"}}><Pill label={status(delta(autoActual,autoTarget))==="good"?"Green":status(delta(autoActual,autoTarget))==="warn"?"Amber":"Red"} variant={status(delta(autoActual,autoTarget))}/></td>
+            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={total.yoy} onChange={v=>onChange(["bu_total","yoy"],v)} suffix="%"/>:fmtPct(total.yoy,0)}</td>
+            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={total.ytd_ebitda} onChange={v=>onChange(["bu_total","ytd_ebitda"],v)} suffix="%"/>:fmtPct(total.ytd_ebitda,0)}</td>
+            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={total.fy_ebitda} onChange={v=>onChange(["bu_total","fy_ebitda"],v)} suffix="%"/>:fmtPct(total.fy_ebitda,0)}</td>
+            <td style={{padding:"14px",fontSize:"10px",color:"var(--faint)",fontStyle:"italic"}}>Target & Actual auto-sum from BU rows</td>
           </tr>
         </tbody>
       </table>
@@ -582,7 +626,8 @@ const Membership = ({ data, editing, onEdit, onSave, onCancel, onChange, onComme
     </div>
     <Card><CardHead title="Initiatives This Week" action={editing&&<Btn variant="ghost" size="sm" onClick={()=>set(["initiatives"],[...m.initiatives,""])}><Plus size={12}/>Add</Btn>}/>
       <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:"8px"}}>
-        {m.initiatives.map((it,i)=>editing?<div key={i} style={{display:"flex",gap:"8px"}}><TI value={it} onChange={v=>{const n=[...m.initiatives];n[i]=v;set(["initiatives"],n);}} style={{flex:1}}/><button onClick={()=>set(["initiatives"],m.initiatives.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--faint)",cursor:"pointer"}}><Trash2 size={13}/></button></div>:<div key={i} style={{display:"flex",gap:"10px",alignItems:"flex-start"}}><ChevronRight size={13} style={{color:"var(--gold)",flexShrink:0,marginTop:"3px"}}/><span style={{fontSize:"13px",color:"var(--muted)"}}>{it}</span></div>)}
+        {m.initiatives.length===0&&!editing&&<p style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic"}}>No initiatives added yet — click "Edit numbers" then "Add" to enter this week's initiatives.</p>}
+        {m.initiatives.map((it,i)=>editing?<div key={i} style={{display:"flex",gap:"8px"}}><TI value={it} onChange={v=>{const n=[...m.initiatives];n[i]=v;set(["initiatives"],n);}} placeholder="Describe the initiative — e.g. 'Launch $199 offer test on Manifesting pathway'" style={{flex:1}}/><button onClick={()=>set(["initiatives"],m.initiatives.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--faint)",cursor:"pointer"}}><Trash2 size={13}/></button></div>:<div key={i} style={{display:"flex",gap:"10px",alignItems:"flex-start"}}><ChevronRight size={13} style={{color:"var(--gold)",flexShrink:0,marginTop:"3px"}}/><span style={{fontSize:"13px",color:"var(--muted)"}}>{it}</span></div>)}
       </div>
     </Card>
     <SectionExtras cfg={data.page_config?.membership||{}} onChange={v=>onChange(["page_config","membership"],v)}/>
@@ -601,7 +646,20 @@ const Pathways = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment
         {["ad_spend","revenue","roas_7d","roas_30d","roas_90d","cpl","aov"].map(k=><td key={k} style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r[k]} onChange={v=>{const n=[...p.rows];n[i]={...n[i],[k]:v};set("rows",n);}} prefix={["ad_spend","revenue","cpl","aov"].includes(k)?"$":""} suffix={["roas_7d","roas_30d","roas_90d"].includes(k)?"%":""}/>:(r[k]===null?<span style={{color:"var(--faint)"}}>—</span>:(k.includes("roas")?fmtPct(r[k],0):fmtM(r[k])))}</td>)}
       </tr>)}</tbody>
     </table></div></Card>
-    <Card><CardHead title="Commentary"/><div style={{padding:"16px"}}>{editing?<TI value={p.commentary} onChange={v=>set("commentary",v)} multi style={{width:"100%",minHeight:"80px"}} placeholder="Winning/bleeding pathways, budget shifts, creative changes…"/>:<p style={{fontSize:"13px",color:p.commentary?"var(--muted)":"var(--faint)",lineHeight:1.7,fontStyle:p.commentary?"normal":"italic"}}>{p.commentary||"No commentary yet."}</p>}</div></Card>
+    <Card><CardHead title="Commentary"/>
+      <div style={{padding:"16px"}}>
+        {editing
+          ?<TI value={p.commentary} onChange={v=>set("commentary",v)} multi style={{width:"100%",minHeight:"100px"}} placeholder="Format: WINNING — [pathway name]: [what's working and why] | BLEEDING — [pathway name]: [what's off and the issue] | BUDGET SHIFTS — [any reallocation this week] | CREATIVE — [new angles being tested]"/>
+          :<>
+            {p.commentary
+              ?<p style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.8,whiteSpace:"pre-line"}}>{p.commentary}</p>
+              :<div style={{background:"var(--card2)",border:"1px dashed var(--border)",borderRadius:"8px",padding:"16px"}}>
+                <p style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic",marginBottom:"10px"}}>No commentary added. Click "Edit numbers" to fill in. Suggested format:</p>
+                <p style={{fontSize:"12px",color:"var(--faint)",lineHeight:1.8}}>WINNING — [Pathway]: [What's working and why]<br/>BLEEDING — [Pathway]: [What's off]<br/>BUDGET SHIFTS — [Reallocations this week]<br/>CREATIVE — [New angles being tested]</p>
+              </div>}
+          </>}
+      </div>
+    </Card>
     <SectionExtras cfg={data.page_config?.pathways||{}} onChange={v=>onChange(["page_config","pathways"],v)}/>
     <CommentsPanel comments={data.section_comments?.pathways} onChange={onComment} sectionLabel="Pathways"/>
   </div>;
@@ -701,12 +759,22 @@ const Product = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment 
       ))}
     </div>
     <div className="rg-3" style={{gap:"12px",marginBottom:"16px"}}>
-      {[["Revenue, Refund & Retention","revenue_refund_retention","MoM / vs Q2"],["Acquisition / Checkout","acquisition_checkout","WoW / vs Q2"],["Engagement & Transformation","engagement_transformation","WoW / vs Q2"]].map(([title,key,note])=>(
+      {[["Revenue, Refund & Retention","revenue_refund_retention","Actual % | MoM pp / vs Q2 pp"],["Acquisition / Checkout","acquisition_checkout","Actual % | WoW pp / vs Q2 pp"],["Engagement & Transformation","engagement_transformation","Actual % | WoW pp / vs Q2 pp"]].map(([title,key,note])=>(
         <Card key={key}><CardHead title={title} sub={note}/><div style={{padding:"12px"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:"12px"}}><tbody>
           {p[key].map((r,i)=>{ const k1=r.mom!==undefined?"mom":"wow"; return <tr key={i} style={{borderBottom:"1px solid var(--border)"}} className="ai-row">
-            <td style={{padding:"7px 8px",color:"var(--muted)"}}>{r.metric}</td>
-            <td style={{padding:"7px 6px",textAlign:"right",fontFamily:"'JetBrains Mono',monospace"}}>{r.actual===null?<span style={{color:"var(--faint)"}}>TBD</span>:fmtPct(r.actual)}</td>
-            <td style={{padding:"7px 6px",textAlign:"right"}}><span style={{display:"flex",alignItems:"center",gap:"3px",justifyContent:"flex-end"}}><Dt delta={r[k1]} suffix="pp"/><span style={{color:"var(--faint)"}}>/</span><Dt delta={r.vs_target} suffix="pp"/></span></td>
+            <td style={{padding:"7px 8px",color:"var(--muted)",fontSize:"12px"}}>{r.metric}</td>
+            <td style={{padding:"7px 6px",textAlign:"right",fontFamily:"'JetBrains Mono',monospace"}}>
+              {editing?<NI value={r.actual} onChange={v=>{const n=[...p[key]];n[i]={...n[i],actual:v};set(key,n);}} suffix="%"/>:(r.actual===null?<span style={{color:"var(--faint)"}}>TBD</span>:fmtPct(r.actual))}
+            </td>
+            <td style={{padding:"7px 6px",textAlign:"right"}}>
+              {editing
+                ?<div style={{display:"flex",gap:"4px",alignItems:"center",justifyContent:"flex-end"}}>
+                  <NI value={r[k1]} onChange={v=>{const n=[...p[key]];n[i]={...n[i],[k1]:v};set(key,n);}}/>
+                  <span style={{color:"var(--faint)",fontSize:"10px"}}>/</span>
+                  <NI value={r.vs_target} onChange={v=>{const n=[...p[key]];n[i]={...n[i],vs_target:v};set(key,n);}}/>
+                </div>
+                :<span style={{display:"flex",alignItems:"center",gap:"3px",justifyContent:"flex-end"}}><Dt delta={r[k1]} suffix="pp"/><span style={{color:"var(--faint)"}}>/</span><Dt delta={r.vs_target} suffix="pp"/></span>}
+            </td>
           </tr>; })}
         </tbody></table></div></Card>
       ))}
@@ -739,6 +807,78 @@ const PRIORITY_OPTIONS=["Critical","High","Medium"];
 const statusStyle=(s)=>s==="Open"?{bg:"var(--red-bg)",color:"var(--red)"}:s==="In Progress"?{bg:"var(--amb-bg)",color:"var(--amber)"}:s==="Complete"?{bg:"var(--grn-bg)",color:"var(--green)"}:s==="Blocked"?{bg:"rgba(123,95,245,0.12)",color:"var(--purple2)"}:{bg:"rgba(127,127,127,0.1)",color:"var(--muted)"};
 const prioStyle=(p)=>p==="Critical"?{bg:"var(--red-bg)",color:"var(--red)"}:p==="High"?{bg:"var(--amb-bg)",color:"var(--amber)"}:{bg:"rgba(127,127,127,0.08)",color:"var(--muted)"};
 const StatusIcon=({s})=>s==="Complete"?<CircleCheck size={13}/>:s==="Blocked"?<Ban size={13}/>:s==="In Progress"?<Clock size={13}/>:<Circle size={13}/>;
+
+// ─────────────────────────────────────────────────────────
+// TRANSCRIPT → AI PARSER PANEL
+// ─────────────────────────────────────────────────────────
+const TranscriptPanel = ({ onImport }) => {
+  const [open,setOpen]=useState(false);
+  const [transcript,setTranscript]=useState("");
+  const [loading,setLoading]=useState(false);
+  const [error,setError]=useState(null);
+  const [preview,setPreview]=useState(null);
+
+  const parse=async()=>{
+    if(!transcript.trim()) return;
+    setLoading(true); setError(null); setPreview(null);
+    try {
+      const res=await fetch("/api/parse-transcript",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({transcript})});
+      const json=await res.json();
+      if(!res.ok) throw new Error(json.error||"Parse failed");
+      setPreview(json);
+    } catch(e){ setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  const confirmImport=()=>{
+    if(!preview) return;
+    onImport(preview.items||[],preview.decisions||[]);
+    setPreview(null); setTranscript(""); setOpen(false);
+  };
+
+  return (
+    <div style={{margin:"28px 0 4px",border:"1px solid var(--border)",borderRadius:"12px",overflow:"hidden",background:"var(--card)"}}>
+      <button onClick={()=>setOpen(!open)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 18px",background:"transparent",border:"none",cursor:"pointer",color:"var(--text)",fontFamily:"inherit"}}>
+        <span style={{display:"flex",alignItems:"center",gap:"10px"}}>
+          <MessageSquare size={14} style={{color:"var(--purple2)",flexShrink:0}}/>
+          <span style={{fontSize:"13px",fontWeight:500,color:"var(--muted)"}}>Paste meeting transcript → AI extracts action items</span>
+          {preview&&<span style={{background:"var(--grn-bg)",color:"var(--green)",fontSize:"10px",fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",border:"1px solid rgba(46,204,113,0.2)",borderRadius:"20px",padding:"2px 8px"}}>Ready to import</span>}
+        </span>
+        {open?<ChevronUp size={14} style={{color:"var(--faint)"}}/>:<ChevronDown size={14} style={{color:"var(--faint)"}}/>}
+      </button>
+      {open&&<div style={{padding:"18px",borderTop:"1px solid var(--border)",display:"flex",flexDirection:"column",gap:"14px"}}>
+        <div>
+          <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--gold)",marginBottom:"8px"}}>Paste transcript</div>
+          <p style={{fontSize:"12px",color:"var(--muted)",marginBottom:"8px",lineHeight:1.6}}>Paste the raw meeting transcript below. The AI will extract action items (owner, priority, due date, OKR) and decisions required — then you can review before importing.</p>
+          <textarea value={transcript} onChange={e=>setTranscript(e.target.value)} placeholder="Paste the full meeting transcript here…" rows={8} style={{width:"100%",resize:"vertical",lineHeight:1.7,fontSize:"13px"}}/>
+        </div>
+        {error&&<div style={{background:"var(--red-bg)",border:"1px solid rgba(212,44,69,0.2)",borderRadius:"8px",padding:"10px 14px",fontSize:"13px",color:"var(--red)"}}>{error}</div>}
+        {!preview&&<Btn variant="primary" onClick={parse} disabled={loading||!transcript.trim()}>{loading?<><RotateCcw size={13} style={{animation:"spin 1s linear infinite"}}/>Analyzing…</>:<><Send size={13}/>Analyze with AI</>}</Btn>}
+        {preview&&<>
+          <div>
+            <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--gold)",marginBottom:"10px"}}>Preview — {preview.items?.length||0} action items · {preview.decisions?.length||0} decisions</div>
+            <div style={{display:"flex",flexDirection:"column",gap:"6px",maxHeight:"240px",overflowY:"auto"}}>
+              {preview.items?.map((it,i)=><div key={i} style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"8px",padding:"10px 14px",fontSize:"12px"}}>
+                <div style={{display:"flex",gap:"8px",alignItems:"baseline",marginBottom:"3px"}}>
+                  <span style={{fontWeight:700,color:"var(--text)"}}>{it.title}</span>
+                  <span style={{color:"var(--muted)"}}>→ {it.owner}</span>
+                  <span style={{color:"var(--faint)"}}>due {it.due}</span>
+                  <span style={{marginLeft:"auto",fontWeight:700,color:it.priority==="Critical"?"var(--red)":it.priority==="High"?"var(--amber)":"var(--muted)"}}>{it.priority}</span>
+                </div>
+                {it.note&&<div style={{fontSize:"11px",color:"var(--faint)"}}>{it.note}</div>}
+              </div>)}
+            </div>
+          </div>
+          <div style={{display:"flex",gap:"8px"}}>
+            <Btn variant="gold" onClick={confirmImport}><Check size={13}/>Import {preview.items?.length} items into register</Btn>
+            <Btn variant="ghost" onClick={()=>setPreview(null)}><RotateCcw size={13}/>Re-analyze</Btn>
+          </div>
+        </>}
+        <p style={{fontSize:"11px",color:"var(--faint)"}}>Requires ANTHROPIC_API_KEY in .env.local. Items are appended — existing register is not overwritten.</p>
+      </div>}
+    </div>
+  );
+};
 
 const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment }) => {
   const ai=data.action_items;
@@ -868,6 +1008,12 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
         {editing&&<button onClick={()=>addItem(prio)} style={{marginTop:"8px",padding:"6px 14px",background:"transparent",border:`1.5px dashed ${prio==="Critical"?"var(--red)":prio==="High"?"var(--amber)":"var(--border)"}`,borderRadius:"7px",color:prio==="Critical"?"var(--red)":prio==="High"?"var(--amber)":"var(--muted)",fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:"6px"}}><Plus size={12}/>Add {prio} item</button>}
       </div>:null;
     })}
+
+    {/* TRANSCRIPT → AI PARSER */}
+    <TranscriptPanel onImport={(items,decisions)=>{
+      if(items?.length) setAI("items",[...ai.items,...items.map(it=>({...it,id:(ai.next_id||100)+Math.floor(Math.random()*1000)}))]);
+      if(decisions?.length) setAI("decisions",[...ai.decisions,...decisions]);
+    }}/>
 
     <SectionExtras cfg={data.page_config?.action_items||{}} onChange={v=>onChange(["page_config","action_items"],v)}/>
     <CommentsPanel comments={data.section_comments?.action_items} onChange={onComment} sectionLabel="Action Items"/>
