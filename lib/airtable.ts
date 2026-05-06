@@ -88,20 +88,20 @@ function fromAirtableRecord(record: any): any {
 
   const items: unknown[] = parseJSON(f["action_items_json"]) ?? [];
 
-  return {
+  // Only include JSON sections that have actual data — null values must not
+  // overwrite mkSeed() defaults when spread in the dashboard.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const jsonSection = (raw: unknown): any | undefined => {
+    const v = parseJSON(raw);
+    return v !== null ? v : undefined;
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result: Record<string, any> = {
     _recordId: record.id,
     label: f["Meeting Label"] ?? "",
     date: f["Meeting Date"] ?? null,
     status: f["Status"] ?? "Draft",
-    meeting_notes: parseJSON(f["Meeting Notes"]) ?? f["Meeting Notes"] ?? "",
-    company_health: parseJSON(f["Company Health JSON"]),
-    bu_performance: parseJSON(f["BU Performance JSON"]),
-    membership: parseJSON(f["Membership JSON"]),
-    pathways: parseJSON(f["Pathways JSON"]),
-    masteries: parseJSON(f["Masteries JSON"]),
-    events: parseJSON(f["Events JSON"]),
-    states: parseJSON(f["States JSON"]),
-    product: parseJSON(f["Product JSON"]),
     section_comments: parseJSON(f["Section Comments JSON"]) ?? {},
     page_config: parseJSON(f["Page Config JSON"]) ?? {},
     action_items: {
@@ -115,6 +115,28 @@ function fromAirtableRecord(record: any): any {
         : 1,
     },
   };
+
+  // Conditionally assign sections so undefined fields don't clobber mkSeed defaults
+  const sections: [string, string][] = [
+    ["company_health", "Company Health JSON"],
+    ["bu_performance", "BU Performance JSON"],
+    ["membership", "Membership JSON"],
+    ["pathways", "Pathways JSON"],
+    ["masteries", "Masteries JSON"],
+    ["events", "Events JSON"],
+    ["states", "States JSON"],
+    ["product", "Product JSON"],
+  ];
+  for (const [key, field] of sections) {
+    const v = jsonSection(f[field]);
+    if (v !== undefined) result[key] = v;
+  }
+
+  const notes = jsonSection(f["Meeting Notes"]);
+  if (notes !== undefined) result.meeting_notes = notes;
+  else if (f["Meeting Notes"]) result.meeting_notes = f["Meeting Notes"];
+
+  return result;
 }
 
 // ---------------------------------------------------------------------------

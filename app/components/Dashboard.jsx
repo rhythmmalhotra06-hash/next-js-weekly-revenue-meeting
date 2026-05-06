@@ -828,6 +828,7 @@ export default function App() {
   const [draftRecordId,setDraftRecordId]=useState(null);
   const timer=useRef(null);
   const apiTimer=useRef(null);
+  const dataRef=useRef(null); // always holds latest data — avoids stale closure in poll
 
   // Init: hydrate from Airtable draft, fall back to localStorage, create if neither exists
   useEffect(()=>{(async()=>{
@@ -850,6 +851,9 @@ export default function App() {
     setReady(true);
   })();},[]);
 
+  // Keep dataRef in sync so the polling closure always sees current data
+  useEffect(()=>{ dataRef.current=data; },[data]);
+
   // Draft auto-save: localStorage at 900ms, Airtable at 15s
   useEffect(()=>{
     if(!ready) return;
@@ -869,8 +873,8 @@ export default function App() {
     const interval=setInterval(async()=>{
       if(editingSec!==null) return;
       const remote=await apiGet('/api/meetings?draft=1');
-      if(remote&&!remote.error&&JSON.stringify(remote)!==JSON.stringify(data)){
-        setData(prev=>({...mkSeed(),...remote}));
+      if(remote&&!remote.error&&JSON.stringify(remote)!==JSON.stringify(dataRef.current)){
+        setData({...mkSeed(),...remote});
         showFlash();
       }
     },5000);
