@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   getDraftMeeting,
-  listFinalizedMeetings,
+  listAllMeetings,
   createMeeting,
 } from "@/lib/airtable";
 
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
       const meeting = await getDraftMeeting();
       return NextResponse.json(meeting ?? null);
     }
-    const meetings = await listFinalizedMeetings();
+    const meetings = await listAllMeetings();
     return NextResponse.json(meetings);
   } catch (err) {
     console.error("[GET /api/meetings]", err);

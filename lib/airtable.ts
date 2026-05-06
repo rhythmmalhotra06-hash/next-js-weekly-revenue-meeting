@@ -199,19 +199,23 @@ export async function updateMeeting(recordId: string, data: any, status?: string
   });
 }
 
-export async function listFinalizedMeetings() {
+export async function listAllMeetings() {
   const url =
-    `/${MEETINGS_TABLE}?filterByFormula=${encodeURIComponent('{Status}="Finalized"')}` +
-    `&sort[0][field]=Meeting+Date&sort[0][direction]=desc` +
-    `&fields[]=Meeting+Label&fields[]=Meeting+Date&fields[]=Created+At`;
+    `/${MEETINGS_TABLE}?sort[0][field]=Meeting+Date&sort[0][direction]=desc` +
+    `&fields[]=Meeting+Label&fields[]=Meeting+Date&fields[]=Status`;
   const data = await airtableFetch(url);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data.records ?? []).map((r: any) => ({
     id: r.id,
     label: r.fields["Meeting Label"] ?? "",
     date: r.fields["Meeting Date"] ?? "",
-    savedAt: r.fields["Created At"] ?? "",
+    status: r.fields["Status"] ?? "Draft",
   }));
+}
+
+// Keep for backward compat
+export async function listFinalizedMeetings() {
+  return (await listAllMeetings()).filter((m: { status: string }) => m.status === "Finalized");
 }
 
 export async function deleteMeeting(recordId: string) {

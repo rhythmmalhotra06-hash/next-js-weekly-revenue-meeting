@@ -37,6 +37,7 @@ const STYLES = `
 }
 
 * { box-sizing:border-box; margin:0; padding:0; }
+html, body { overflow-x:hidden; max-width:100%; }
 body { background:var(--bg); color:var(--text); font-family:'Sora',system-ui,sans-serif; font-size:14px; line-height:1.5; }
 .font-display { font-family:'Fraunces',Georgia,serif; font-optical-sizing:auto; }
 .font-mono    { font-family:'JetBrains Mono',monospace; font-variant-numeric:tabular-nums; }
@@ -1093,12 +1094,24 @@ const HistoryPanel=({ meetings, onLoad, onClose, onDelete })=>(
 // ─────────────────────────────────────────────────────────
 // DATE SELECT SCREEN
 // ─────────────────────────────────────────────────────────
-const DateSelectScreen = ({ draftDate, meetings, onSelectDraft, onSelectPast }) => {
-  const sorted=[...meetings].sort((a,b)=>b.date>a.date?1:-1);
-  const draftWeekday=draftDate?new Date(...draftDate.split('-').map((v,i)=>i===1?Number(v)-1:Number(v))).toLocaleDateString("en-US",{weekday:"long"}):"Tuesday";
+const DateSelectScreen = ({ meetings, onSelect, onCreate }) => {
+  const [showNew, setShowNew]=useState(false);
+  const [newDate, setNewDate]=useState(nextTuesdayISO());
+  const today=localISO();
+
+  // Classify meetings
+  const currentDraft=meetings.find(m=>m.status==="Draft"&&(!m.date||m.date>=today));
+  const pastMeetings=[...meetings]
+    .filter(m=>!(m.status==="Draft"&&(!m.date||m.date>=today)))
+    .sort((a,b)=>b.date>a.date?-1:1);
+
+  const mkWeekday=d=>{if(!d) return ""; const [y,mo,dy]=d.split('-').map(Number); return new Date(y,mo-1,dy).toLocaleDateString("en-US",{weekday:"long"});};
+
   return (
     <div className="fade-up" style={{position:"fixed",inset:0,zIndex:9999,background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center",padding:"32px",overflowY:"auto",pointerEvents:"all"}}>
       <div style={{maxWidth:"640px",width:"100%"}}>
+
+        {/* Hero */}
         <div style={{textAlign:"center",marginBottom:"40px"}}>
           <div style={{width:"58px",height:"58px",borderRadius:"16px",background:"linear-gradient(135deg,var(--purple),var(--purple2))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px",fontWeight:700,color:"#fff",margin:"0 auto 18px",boxShadow:"0 8px 28px rgba(123,95,245,0.4)"}}>M</div>
           <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"10px"}}>Mindvalley · Revenue Task Force</div>
@@ -1106,38 +1119,56 @@ const DateSelectScreen = ({ draftDate, meetings, onSelectDraft, onSelectPast }) 
           <p style={{fontSize:"14px",color:"var(--muted)",marginTop:"10px"}}>Select a meeting week to open</p>
         </div>
 
-        {/* Current draft */}
-        <div onClick={onSelectDraft} style={{border:"1.5px solid rgba(123,95,245,0.45)",borderRadius:"14px",padding:"20px 24px",marginBottom:"14px",cursor:"pointer",background:"linear-gradient(135deg,rgba(123,95,245,0.1),rgba(123,95,245,0.04))",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"all 0.15s",boxShadow:"0 0 30px rgba(123,95,245,0.08)"}}>
-          <div>
-            <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"5px"}}>Current Draft</div>
-            <div className="font-display" style={{fontSize:"24px",color:"var(--text)"}}>{fmtDate(draftDate)||"Next Tuesday"}</div>
-            <div style={{fontSize:"12px",color:"var(--muted)",marginTop:"3px"}}>{draftWeekday} · Week {getISOWeek(draftDate)||"—"} · Continue editing this week's data</div>
+        {/* Current draft — or empty state */}
+        {currentDraft
+          ?<div onClick={()=>onSelect(currentDraft)} style={{border:"1.5px solid rgba(123,95,245,0.45)",borderRadius:"14px",padding:"20px 24px",marginBottom:"10px",cursor:"pointer",background:"linear-gradient(135deg,rgba(123,95,245,0.1),rgba(123,95,245,0.04))",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"all 0.15s",boxShadow:"0 0 30px rgba(123,95,245,0.08)"}}>
+              <div>
+                <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"5px"}}>Current Draft</div>
+                <div className="font-display" style={{fontSize:"24px",color:"var(--text)"}}>{fmtDate(currentDraft.date)||"This week"}</div>
+                <div style={{fontSize:"12px",color:"var(--muted)",marginTop:"3px"}}>{mkWeekday(currentDraft.date)} · Week {getISOWeek(currentDraft.date)||"—"} · Continue editing</div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:"10px",flexShrink:0}}>
+                <Pill label="Draft" variant="warn"/>
+                <ArrowRight size={16} style={{color:"var(--purple2)"}}/>
+              </div>
+            </div>
+          :<div style={{border:"1px dashed var(--border)",borderRadius:"14px",padding:"22px 24px",marginBottom:"10px",textAlign:"center"}}>
+            <div style={{fontSize:"13px",color:"var(--muted)",marginBottom:"12px"}}>No active draft for this week</div>
+            <Btn variant="primary" onClick={()=>setShowNew(true)}>+ Create This Week's Meeting</Btn>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:"10px",flexShrink:0}}>
-            <Pill label="Draft" variant="warn"/>
-            <ArrowRight size={16} style={{color:"var(--purple2)"}}/>
-          </div>
+        }
+
+        {/* New meeting toggle */}
+        <div style={{marginBottom:"22px"}}>
+          {!showNew
+            ?<button onClick={()=>setShowNew(true)} style={{display:"flex",alignItems:"center",gap:"7px",background:"none",border:"1px solid var(--border)",borderRadius:"8px",padding:"8px 14px",color:"var(--muted)",cursor:"pointer",fontSize:"13px",fontFamily:"inherit",width:"100%",justifyContent:"center",transition:"all 0.12s"}}><Plus size={13}/>New Meeting for a Different Date</button>
+            :<div style={{border:"1px solid var(--border-strong,rgba(255,255,255,0.13))",borderRadius:"14px",padding:"18px 22px",background:"var(--card2)"}}>
+                <div style={{fontSize:"12px",fontWeight:700,color:"var(--muted)",marginBottom:"12px",textTransform:"uppercase",letterSpacing:"0.07em"}}>Create New Meeting</div>
+                <div style={{display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+                  <input type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} min={today} style={{flex:"1 1 160px"}}/>
+                  <Btn variant="primary" onClick={()=>{if(newDate){onCreate(newDate);setShowNew(false);}}}>Create Draft</Btn>
+                  <Btn variant="ghost" onClick={()=>setShowNew(false)}>Cancel</Btn>
+                </div>
+              </div>
+          }
         </div>
 
         {/* Past meetings */}
-        {sorted.length>0&&<>
-          <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--faint)",margin:"22px 0 10px"}}>Past Meetings</div>
+        {pastMeetings.length>0&&<>
+          <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--faint)",marginBottom:"10px"}}>Past Meetings</div>
           <div className="rg-2" style={{gap:"10px"}}>
-            {sorted.map(m=>{
-              const weekday=m.date?new Date(...m.date.split('-').map((v,i)=>i===1?Number(v)-1:Number(v))).toLocaleDateString("en-US",{weekday:"long"}):"";
-              return (
-                <div key={m.id} onClick={()=>onSelectPast(m.id)} style={{border:"1px solid var(--border)",borderRadius:"14px",padding:"15px 18px",cursor:"pointer",background:"var(--card)",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"all 0.15s"}}>
-                  <div>
-                    <div className="font-display" style={{fontSize:"18px",color:"var(--text)"}}>{fmtDate(m.date)}</div>
-                    <div style={{fontSize:"11px",color:"var(--faint)",marginTop:"2px"}}>{weekday} · Week {getISOWeek(m.date)||"—"}</div>
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:"8px",flexShrink:0}}>
-                    <Pill label="Finalized" variant="good"/>
-                    <ArrowRight size={15} style={{color:"var(--muted)"}}/>
-                  </div>
+            {pastMeetings.map(m=>(
+              <div key={m.id} onClick={()=>onSelect(m)} style={{border:"1px solid var(--border)",borderRadius:"14px",padding:"15px 18px",cursor:"pointer",background:"var(--card)",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"all 0.15s"}}>
+                <div>
+                  <div className="font-display" style={{fontSize:"18px",color:"var(--text)"}}>{fmtDate(m.date)||m.label}</div>
+                  <div style={{fontSize:"11px",color:"var(--faint)",marginTop:"2px"}}>{mkWeekday(m.date)} · Week {getISOWeek(m.date)||"—"}</div>
                 </div>
-              );
-            })}
+                <div style={{display:"flex",alignItems:"center",gap:"8px",flexShrink:0}}>
+                  <Pill label={m.status==="Draft"?"Draft":"Finalized"} variant={m.status==="Draft"?"warn":"good"}/>
+                  <ArrowRight size={15} style={{color:"var(--muted)"}}/>
+                </div>
+              </div>
+            ))}
           </div>
         </>}
       </div>
@@ -1178,29 +1209,33 @@ export default function App() {
     return ()=>mq.removeEventListener('change',h);
   },[]);
 
-  // Init: hydrate from Airtable draft, fall back to localStorage, create if neither exists
+  // Init: load all meetings, find current draft, hydrate full data
   useEffect(()=>{(async()=>{
-    const remote=await apiGet('/api/meetings?draft=1');
-    if(remote && !remote.error){
-      setData(hydrate(remote));
-      setDraftRecordId(remote._recordId);
-      lsSet('mv2:draft',remote);
-    } else {
-      const local=lsGet('mv2:draft');
-      if(local){
-        setData(hydrate(local));
-      } else {
-        // No draft anywhere — create a fresh one in Airtable
-        const seed=mkSeed();
-        const res=await apiPost('/api/meetings',{data:seed,status:'Draft'});
-        if(res?.recordId) setDraftRecordId(res.recordId);
-        setData(seed);
+    const today=localISO();
+    // Single call returns all meetings (Draft + Finalized) with status
+    const allMeetings=await apiGet('/api/meetings');
+    if(Array.isArray(allMeetings)) setMeetings(allMeetings);
+
+    // Current draft = Draft record whose meeting date >= today (take the earliest upcoming)
+    const draftSummary=Array.isArray(allMeetings)
+      ?allMeetings.filter(m=>m.status==='Draft'&&(!m.date||m.date>=today)).sort((a,b)=>a.date>b.date?1:-1)[0]
+      :null;
+
+    if(draftSummary){
+      const remote=await apiGet(`/api/meetings/${draftSummary.id}`);
+      if(remote&&!remote.error){
+        setData(hydrate(remote));
+        setDraftRecordId(draftSummary.id);
+        lsSet('mv2:draft',remote);
       }
+    } else {
+      // Fall back to localStorage cache (handles offline or when no Airtable draft)
+      const local=lsGet('mv2:draft');
+      if(local) setData(hydrate(local));
     }
-    const list=await apiGet('/api/meetings');
-    if(Array.isArray(list)) setMeetings(list);
+
     setReady(true);
-    setShowDateSelect(true); // always show date picker on load
+    setShowDateSelect(true);
   })();},[]);
 
   // Keep dataRef in sync so the polling closure always sees current data
@@ -1228,7 +1263,7 @@ export default function App() {
     if(!ready||!draftRecordId||viewingId!==null) return;
     const interval=setInterval(async()=>{
       if(editingSec!==null||localDirty.current) return; // skip if user has unpushed changes
-      const remote=await apiGet('/api/meetings?draft=1');
+      const remote=await apiGet(`/api/meetings/${draftRecordId}`);
       if(remote&&!remote.error&&JSON.stringify(remote)!==JSON.stringify(dataRef.current)){
         setData(hydrate(remote));
         showFlash();
@@ -1246,20 +1281,19 @@ export default function App() {
 
   const saveMeeting=async()=>{
     if(!draftRecordId) return;
-    // Finalize the current draft record in Airtable
+    if(!confirm("This will finalize this meeting and move it to Past Meetings. Are you sure?")) return;
     await apiPut(`/api/meetings/${draftRecordId}`,{data:{...data,status:"finalized"},status:"Finalized"});
-    // Create a blank Draft for next week
-    const fresh=mkBlankSeed();
-    const res=await apiPost('/api/meetings',{data:fresh,status:'Draft'});
-    if(res?.recordId) setDraftRecordId(res.recordId);
-    setData(fresh);
     lsDel('mv2:draft');
-    const list=await apiGet('/api/meetings');
-    if(Array.isArray(list)) setMeetings(list);
+    const allMeetings=await apiGet('/api/meetings');
+    if(Array.isArray(allMeetings)) setMeetings(allMeetings);
+    // After finalizing, go back to the landing page so user can create a new draft
+    setViewingId(draftRecordId);
+    setDraftRecordId(null);
+    setShowDateSelect(true);
     showFlash();
   };
   const loadMeeting=async(id)=>{ const m=await apiGet(`/api/meetings/${id}`); if(m&&!m.error){setData(hydrate(m));setViewingId(id);setShowHistory(false);setActive("company_health");} };
-  const deleteMeeting=async(id)=>{ await apiDel(`/api/meetings/${id}`); const list=await apiGet('/api/meetings'); if(Array.isArray(list)) setMeetings(list); };
+  const deleteMeeting=async(id)=>{ await apiDel(`/api/meetings/${id}`); const allMeetings=await apiGet('/api/meetings'); if(Array.isArray(allMeetings)) setMeetings(allMeetings); };
   const exportData=()=>{ const b=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=`mv_performance_${data.meeting_date}.json`; a.click(); URL.revokeObjectURL(u); };
   const resetDraft=async()=>{ if(!confirm("Reset the current draft to a blank week?")) return; const f=mkBlankSeed(); if(draftRecordId) apiPut(`/api/meetings/${draftRecordId}`,{data:f}); lsDel('mv2:draft'); setData(f); };
 
@@ -1269,28 +1303,51 @@ export default function App() {
     setData(prev=>({...prev,meeting_date:newDate,meeting_label:`Week of ${fmtDate(newDate)}`}));
   };
 
-  // Return to the live draft from a past meeting view
+  // Return to the current draft from a past meeting view
   const returnToDraft=async()=>{
-    const remote=await apiGet('/api/meetings?draft=1');
-    setData(remote&&!remote.error?hydrate(remote):mkSeed());
+    if(draftRecordId){
+      const remote=await apiGet(`/api/meetings/${draftRecordId}`);
+      if(remote&&!remote.error) setData(hydrate(remote));
+    }
     setViewingId(null);
     setActive("company_health");
   };
 
-  // Date picker selection
-  const selectFromDatePicker=async(id)=>{
-    if(id==='draft'){
+  // Create a brand-new draft for a specific date
+  const createNewDraft=async(date)=>{
+    const seed={...mkBlankSeed(),meeting_date:date,meeting_label:`Week of ${fmtDate(date)}`};
+    const res=await apiPost('/api/meetings',{data:seed,status:'Draft'});
+    if(res?.recordId){
+      setDraftRecordId(res.recordId);
+      setData(seed);
       setViewingId(null);
+      lsSet('mv2:draft',{...seed,_recordId:res.recordId});
+      setMeetings(prev=>[{id:res.recordId,date,label:seed.meeting_label,status:'Draft'},...prev]);
+      setShowDateSelect(false);
+    }
+  };
+
+  // Landing page: select any meeting to open
+  const selectMeeting=async(meeting)=>{
+    const today=localISO();
+    const isCurrentDraft=meeting.status==='Draft'&&(!meeting.date||meeting.date>=today);
+    const m=await apiGet(`/api/meetings/${meeting.id}`);
+    if(m&&!m.error){
+      setData(hydrate(m));
+      if(isCurrentDraft){
+        setViewingId(null);
+        setDraftRecordId(meeting.id);
+      } else {
+        setViewingId(meeting.id);
+      }
       setActive("company_health");
-    } else {
-      const m=await apiGet(`/api/meetings/${id}`);
-      if(m&&!m.error){ setData(hydrate(m)); setViewingId(id); setActive("company_health"); }
     }
     setShowDateSelect(false);
   };
 
   // Week navigator: sorted finalized list + current draft at end
-  const sortedMeetings=[...meetings].sort((a,b)=>a.date<b.date?-1:1);
+  const today=localISO();
+  const sortedMeetings=[...meetings].filter(m=>m.status!=='Draft'||(m.date&&m.date<today)).sort((a,b)=>a.date<b.date?-1:1);
   const navPos=viewingId?sortedMeetings.findIndex(m=>m.id===viewingId):sortedMeetings.length;
   const hasPrev=navPos>0;
   const hasNext=navPos<sortedMeetings.length; // draft is always last
@@ -1310,10 +1367,9 @@ export default function App() {
       {/* DATE SELECT SPLASH */}
       {showDateSelect&&ready&&(
         <DateSelectScreen
-          draftDate={data.meeting_date}
           meetings={meetings}
-          onSelectDraft={()=>selectFromDatePicker('draft')}
-          onSelectPast={selectFromDatePicker}
+          onSelect={selectMeeting}
+          onCreate={createNewDraft}
         />
       )}
 
