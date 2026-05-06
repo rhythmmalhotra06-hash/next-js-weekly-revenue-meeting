@@ -70,6 +70,7 @@ const fmtNum = (n) => { const v=parseFloat(n); return isNaN(v)?"—":v.toLocaleS
 const delta  = (a,t) => { const av=parseFloat(a),tv=parseFloat(t); return (isNaN(av)||isNaN(tv)||tv===0)?null:((av-tv)/tv)*100; };
 const status = (d) => d===null?"neutral":d>=-5?"good":d>=-15?"warn":"bad";
 const todayISO = () => new Date().toISOString().slice(0,10);
+const nextTuesdayISO = () => { const d=new Date(); const diff=(2-d.getDay()+7)%7||7; d.setDate(d.getDate()+diff); return d.toISOString().slice(0,10); };
 const fmtDate  = (s) => s?new Date(s).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}):"";
 const uid = () => Math.random().toString(36).slice(2,9);
 
@@ -178,6 +179,88 @@ const mkSeed = () => ({
     next_id:21
   }
 });
+
+// Blank seed for a new week — preserves structural arrays (BU names, metric names)
+// but nulls all numbers and clears all narrative/text fields.
+const mkBlankSeed = () => {
+  const date=nextTuesdayISO();
+  return {
+    id:uid(), meeting_date:date, meeting_label:`Week of ${fmtDate(date)}`, status:"draft",
+    meeting_notes:"",
+    section_comments:{company_health:[],bu_performance:[],membership:[],pathways:[],masteries:[],events:[],states:[],product:[],action_items:[],meeting_notes:[]},
+    page_config:{company_health:emptyPageCfg(),bu_performance:emptyPageCfg(),membership:emptyPageCfg(),pathways:emptyPageCfg(),masteries:emptyPageCfg(),events:emptyPageCfg(),states:emptyPageCfg(),product:emptyPageCfg(),action_items:emptyPageCfg(),meeting_notes:emptyPageCfg()},
+    company_health:{
+      mtd_sales_actual:null,mtd_sales_target:null,week_actual:null,week_target:null,
+      cash_balance:null,cash_runway_months:null,cash_last_week:null,
+      aer_actual:null,aer_target:null,ad_spend:null,adspend_pct:null,adspend_num:null,
+      must_solve:[],forward_risks:[],
+      rf:{sa:null,st:null,yoy:null,gp:null,ea:null,ep:null,et:null,oa:null,op:null,ot:null,ada:null,adp:null,adly:null,adlyp:null,hcp:null,hct:null,ga:null,ni:null,nip:null,c:null,ct:null,cly:null}
+    },
+    bu_performance:[
+      {bu:"Membership",target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null,why:"",risk:""},
+      {bu:"Academy",   target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null,why:"",risk:""},
+      {bu:"Events",    target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null,why:"",risk:""},
+      {bu:"States",    target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null,why:"",risk:""}
+    ],
+    bu_total:{target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null},
+    membership:{sales_actual:null,sales_target:null,new_subs:null,lost_subs:null,roas_30d:null,cpl:null,cpl_prev:null,new_per_day:null,lost_per_day:null,refund_rate:null,refund_rate_ly:null,initiatives:[]},
+    pathways:{rows:[
+      {name:"Manifesting",ad_spend:null,revenue:null,roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,aov:null},
+      {name:"Entrepreneurship",ad_spend:null,revenue:null,roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,aov:null},
+      {name:"Speaking & Authorship",ad_spend:null,revenue:null,roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,aov:null},
+      {name:"Longevity",ad_spend:null,revenue:null,roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,aov:null}
+    ],commentary:""},
+    masteries:{
+      sales_mtd:null,cash_collected_mtd:null,refund_rate:null,cash_forecast_mtd:null,
+      products:[
+        {name:"Mastery",sales:null,cash:null,refund_pct:null,pif_pct:null},
+        {name:"Accelerator",sales:null,cash:null,refund_pct:null,pif_pct:null},
+        {name:"Certification",sales:null,cash:null,refund_pct:null,pif_pct:null}
+      ],
+      roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,webinar_conv:null,aov:null,
+      pipeline:[],
+      academy_summary:{total_sales:null,total_cash:null,total_refund:null,breakdown:[
+        {name:"Mastery",sales:null,cash:null,refund:null},
+        {name:"Accelerator",sales:null,cash:null,refund:null},
+        {name:"Certification",sales:null,cash:null,refund:null}
+      ]},
+      summit:{leads:null,lp_cr:null,cpl:null,vip:null,member_leads:null,baseline:[
+        {metric:"Sessions",current:null,baseline:null,diff:null},
+        {metric:"Sublist",current:null,baseline:null,diff:null},
+        {metric:"LP CR%",current:null,baseline:null,diff:null},
+        {metric:"Member",current:null,baseline:null,diff:null},
+        {metric:"Non-member",current:null,baseline:null,diff:null}
+      ]}
+    },
+    events:{campaign_name:"",tickets_sold:null,tickets_target:null,tickets_remaining:null,revenue_actual:null,revenue_target:null,refund_rate:null,refund_dollars:null,gross_revenue:null,velocity_7d:null,velocity_per_day:null,velocity_required:null,yoy_paid_pct:null,yoy_paid_actual:null,yoy_paid_ly:null,yoy_revenue_pct:null,yoy_revenue_actual:null,yoy_revenue_ly:null,ads_status:"",ads_roas:null,valid_tickets:null,paid_tickets:null,comped_tickets:null,webinar_closes:null,webinar_revenue:null,refund_forecast_initial:null,refund_forecast_worst:null,refund_worst_dollars:null,refund_worst_delta:null,refund_2025_actual:null,speakers_confirmed:null,speakers_negotiating:[],venue_status:""},
+    states:{mtd_sales:null,mtd_target:null,bottles_sold:null,bottles_target:null,revenue_per_session:null,units_left:null,days_to_expiry:null,sell_through_required:null,sell_through_actual:null,write_off_projection:null,roas_7d:null,roas_30d:null,roas_90d:null,cac_payback:null,cpl:null,repeat_rate:null,time_to_2nd:null,aov:null,paid_pct:null,organic_pct:null,notes:""},
+    product:{
+      platform_revenue_mtd:null,engagement:null,engagement_wow:null,engagement_target_delta:null,activation:null,activation_wow:null,activation_target_delta:null,
+      revenue_refund_retention:[
+        {metric:"Platform Revenue MTD",actual:null,mom:null,vs_target:null},
+        {metric:"Y-MVM Refund",actual:null,mom:null,vs_target:null},
+        {metric:"Y-M13 retention",actual:null,mom:null,vs_target:null},
+        {metric:"Y-M1 retention",actual:null,mom:null,vs_target:null},
+        {metric:"M-M3 retention",actual:null,mom:null,vs_target:null}
+      ],
+      acquisition_checkout:[
+        {metric:"US checkout",actual:null,wow:null,vs_target:null},
+        {metric:"RoW checkout",actual:null,wow:null,vs_target:null},
+        {metric:"Day 0 login",actual:null,wow:null,vs_target:null},
+        {metric:"Renewal ratio",actual:null,wow:null,vs_target:null}
+      ],
+      engagement_transformation:[
+        {metric:"Engagement",actual:null,wow:null,vs_target:null},
+        {metric:"Activation",actual:null,wow:null,vs_target:null},
+        {metric:"Transformation",actual:null,wow:null,vs_target:null},
+        {metric:"MAU/MAS",actual:null,wow:null,vs_target:null},
+        {metric:"CS Ticket/MAS",actual:null,wow:null,vs_target:null}
+      ],
+      initiatives:[]
+    },
+    action_items:{pm_flag_active:false,pm_flag_text:"",items:[],decisions:[],next_id:1}
+  };
+};
 
 // Deep-merge remote/local data with seed so nested arrays (must_solve, rows,
 // products, items…) always exist even when Airtable fields are partially filled.
@@ -914,8 +997,8 @@ export default function App() {
     if(!draftRecordId) return;
     // Finalize the current draft record in Airtable
     await apiPut(`/api/meetings/${draftRecordId}`,{data:{...data,status:"finalized"},status:"Finalized"});
-    // Create a fresh Draft for next week
-    const fresh={...mkSeed(),id:uid(),meeting_date:todayISO(),meeting_label:`Week of ${fmtDate(todayISO())}`};
+    // Create a blank Draft for next week
+    const fresh=mkBlankSeed();
     const res=await apiPost('/api/meetings',{data:fresh,status:'Draft'});
     if(res?.recordId) setDraftRecordId(res.recordId);
     setData(fresh);
@@ -927,7 +1010,7 @@ export default function App() {
   const loadMeeting=async(id)=>{ const m=await apiGet(`/api/meetings/${id}`); if(m&&!m.error){setData(hydrate(m));setViewingId(id);setShowHistory(false);setActive("company_health");} };
   const deleteMeeting=async(id)=>{ await apiDel(`/api/meetings/${id}`); const list=await apiGet('/api/meetings'); if(Array.isArray(list)) setMeetings(list); };
   const exportData=()=>{ const b=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=`mv_performance_${data.meeting_date}.json`; a.click(); URL.revokeObjectURL(u); };
-  const resetDraft=async()=>{ if(!confirm("Reset the current draft to a blank week?")) return; const f={...mkSeed(),id:uid(),meeting_date:todayISO(),meeting_label:`Week of ${fmtDate(todayISO())}`}; if(draftRecordId) apiPut(`/api/meetings/${draftRecordId}`,{data:f}); lsSet('mv2:draft',f); setData(f); };
+  const resetDraft=async()=>{ if(!confirm("Reset the current draft to a blank week?")) return; const f=mkBlankSeed(); if(draftRecordId) apiPut(`/api/meetings/${draftRecordId}`,{data:f}); lsDel('mv2:draft'); setData(f); };
 
   // Date change: update both date + label, auto-save handles the Airtable write
   const handleDateChange=(newDate)=>{
