@@ -30,8 +30,10 @@ async function airtableFetch(path: string, options: RequestInit = {}) {
 function toAirtableFields(data: any, status?: string): Record<string, unknown> {
   const fields: Record<string, unknown> = {};
 
-  if (data.label !== undefined) fields["Meeting Label"] = data.label ?? "";
-  if (data.date !== undefined) fields["Meeting Date"] = data.date ?? null;
+  const meetingDate = data.meeting_date ?? data.date;
+  const meetingLabel = data.meeting_label ?? data.label;
+  if (meetingDate !== undefined) fields["Meeting Date"] = meetingDate ?? null;
+  if (meetingLabel !== undefined) fields["Meeting Label"] = meetingLabel ?? "";
   if (status !== undefined) fields["Status"] = status;
 
   // Plain text extract for Meeting Notes field (Airtable multilineText)

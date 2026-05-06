@@ -297,6 +297,9 @@ const hydrate = (remote) => {
       merged[k] = v;
     }
   }
+  // Map Airtable field names (date/label) to dashboard field names (meeting_date/meeting_label)
+  if (remote.date) merged.meeting_date = remote.date;
+  if (remote.label) merged.meeting_label = remote.label;
   return merged;
 };
 

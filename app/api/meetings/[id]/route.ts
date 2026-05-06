@@ -36,7 +36,7 @@ export async function PUT(
     if (data.action_items?.items) {
       const updatedItems = await upsertActionItems(
         id,
-        data.label ?? "",
+        data.meeting_label ?? data.label ?? "",
         data.action_items.items,
         body.previousItems ?? []
       );
