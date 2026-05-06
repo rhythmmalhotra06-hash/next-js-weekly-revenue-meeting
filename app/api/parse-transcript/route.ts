@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import Groq from "groq-sdk";
 
 const SYSTEM = `You are an assistant that parses meeting transcripts and extracts structured data.
 From the transcript extract:
@@ -38,10 +38,10 @@ Rules:
 - Return empty arrays if none found — never return null`;
 
 export async function POST(req: NextRequest) {
-  const key = process.env.ANTHROPIC_API_KEY;
+  const key = process.env.GROQ_API_KEY;
   if (!key) {
     return NextResponse.json(
-      { error: "ANTHROPIC_API_KEY not set in .env.local" },
+      { error: "GROQ_API_KEY not set in .env.local" },
       { status: 500 }
     );
   }
@@ -52,16 +52,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No transcript provided" }, { status: 400 });
     }
 
-    const client = new Anthropic({ apiKey: key });
-    const msg = await client.messages.create({
-      model: "claude-sonnet-4-6",
+    const client = new Groq({ apiKey: key });
+    const msg = await client.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
       max_tokens: 4096,
-      system: SYSTEM,
-      messages: [{ role: "user", content: `Transcript:\n\n${transcript}` }],
+      temperature: 0.1,
+      messages: [
+        { role: "system", content: SYSTEM },
+        { role: "user", content: `Transcript:\n\n${transcript}` },
+      ],
     });
 
-    const text = msg.content[0].type === "text" ? msg.content[0].text : "";
-    const parsed = JSON.parse(text);
+    const text = msg.choices[0]?.message?.content || "";
+    // Strip markdown code fences if the model wraps the JSON
+    const clean = text.replace(/^```(?:json)?\n?/,"").replace(/\n?```$/,"").trim();
+    const parsed = JSON.parse(clean);
     return NextResponse.json(parsed);
   } catch (err) {
     console.error("[POST /api/parse-transcript]", err);

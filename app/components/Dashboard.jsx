@@ -874,7 +874,7 @@ const TranscriptPanel = ({ onImport }) => {
             <Btn variant="ghost" onClick={()=>setPreview(null)}><RotateCcw size={13}/>Re-analyze</Btn>
           </div>
         </>}
-        <p style={{fontSize:"11px",color:"var(--faint)"}}>Requires ANTHROPIC_API_KEY in .env.local. Items are appended — existing register is not overwritten.</p>
+        <p style={{fontSize:"11px",color:"var(--faint)"}}>Powered by Groq · llama-3.3-70b. Items are appended — existing register is not overwritten.</p>
       </div>}
     </div>
   );
