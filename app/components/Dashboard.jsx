@@ -839,12 +839,15 @@ export default function App() {
       lsSet('mv2:draft',remote);
     } else {
       const local=lsGet('mv2:draft');
-      if(local){ setData(prev=>({...mkSeed(),...local})); }
-      // No draft anywhere — create one in Airtable
-      const seed=mkSeed();
-      const res=await apiPost('/api/meetings',{data:seed,status:'Draft'});
-      if(res?.recordId) setDraftRecordId(res.recordId);
-      if(!local) setData(seed);
+      if(local){
+        setData(prev=>({...mkSeed(),...local}));
+      } else {
+        // No draft anywhere — create a fresh one in Airtable
+        const seed=mkSeed();
+        const res=await apiPost('/api/meetings',{data:seed,status:'Draft'});
+        if(res?.recordId) setDraftRecordId(res.recordId);
+        setData(seed);
+      }
     }
     const list=await apiGet('/api/meetings');
     if(Array.isArray(list)) setMeetings(list);
