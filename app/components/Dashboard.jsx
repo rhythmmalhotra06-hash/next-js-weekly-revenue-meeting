@@ -179,6 +179,24 @@ const mkSeed = () => ({
   }
 });
 
+// Deep-merge remote/local data with seed so nested arrays (must_solve, rows,
+// products, items…) always exist even when Airtable fields are partially filled.
+const hydrate = (remote) => {
+  if (!remote) return mkSeed();
+  const seed = mkSeed();
+  const merged = { ...seed };
+  for (const [k, v] of Object.entries(remote)) {
+    if (v === null || v === undefined) continue;
+    if (v && typeof v === 'object' && !Array.isArray(v) &&
+        seed[k] && typeof seed[k] === 'object' && !Array.isArray(seed[k])) {
+      merged[k] = { ...seed[k], ...v };
+    } else {
+      merged[k] = v;
+    }
+  }
+  return merged;
+};
+
 // ─────────────────────────────────────────────────────────
 // ATOMS
 // ─────────────────────────────────────────────────────────
@@ -834,13 +852,13 @@ export default function App() {
   useEffect(()=>{(async()=>{
     const remote=await apiGet('/api/meetings?draft=1');
     if(remote && !remote.error){
-      setData(prev=>({...mkSeed(),...remote}));
+      setData(hydrate(remote));
       setDraftRecordId(remote._recordId);
       lsSet('mv2:draft',remote);
     } else {
       const local=lsGet('mv2:draft');
       if(local){
-        setData(prev=>({...mkSeed(),...local}));
+        setData(hydrate(local));
       } else {
         // No draft anywhere — create a fresh one in Airtable
         const seed=mkSeed();
@@ -877,7 +895,7 @@ export default function App() {
       if(editingSec!==null) return;
       const remote=await apiGet('/api/meetings?draft=1');
       if(remote&&!remote.error&&JSON.stringify(remote)!==JSON.stringify(dataRef.current)){
-        setData({...mkSeed(),...remote});
+        setData(hydrate(remote));
         showFlash();
       }
     },5000);
@@ -905,7 +923,7 @@ export default function App() {
     if(Array.isArray(list)) setMeetings(list);
     showFlash();
   };
-  const loadMeeting=async(id)=>{ const m=await apiGet(`/api/meetings/${id}`); if(m&&!m.error){setData(prev=>({...mkSeed(),...m}));setShowHistory(false);setActive("company_health");} };
+  const loadMeeting=async(id)=>{ const m=await apiGet(`/api/meetings/${id}`); if(m&&!m.error){setData(hydrate(m));setShowHistory(false);setActive("company_health");} };
   const deleteMeeting=async(id)=>{ await apiDel(`/api/meetings/${id}`); const list=await apiGet('/api/meetings'); if(Array.isArray(list)) setMeetings(list); };
   const exportData=()=>{ const b=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=`mv_performance_${data.meeting_date}.json`; a.click(); URL.revokeObjectURL(u); };
   const resetDraft=async()=>{ if(!confirm("Reset the current draft to a blank week?")) return; const f={...mkSeed(),id:uid(),meeting_date:todayISO(),meeting_label:`Week of ${fmtDate(todayISO())}`}; if(draftRecordId) apiPut(`/api/meetings/${draftRecordId}`,{data:f}); lsSet('mv2:draft',f); setData(f); };
