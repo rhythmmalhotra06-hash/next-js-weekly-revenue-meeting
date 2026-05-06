@@ -1075,7 +1075,12 @@ const SECTIONS=[
 // ─────────────────────────────────────────────────────────
 // HISTORY PANEL
 // ─────────────────────────────────────────────────────────
-const HistoryPanel=({ meetings, onLoad, onClose, onDelete })=>(
+const HistoryPanel=({ meetings, onLoad, onClose, onDelete, onUpdateDate })=>{
+  const [editingDate,setEditingDate]=useState(null);
+  const [tempDate,setTempDate]=useState("");
+  const startDateEdit=(m)=>{setEditingDate(m.id);setTempDate(m.date);};
+  const saveDateEdit=()=>{onUpdateDate(editingDate,tempDate);setEditingDate(null);};
+  return (
   <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center",padding:"32px"}}>
     <div onClick={e=>e.stopPropagation()} style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"16px",maxWidth:"600px",width:"100%",maxHeight:"75vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <div style={{padding:"20px 24px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -1085,13 +1090,22 @@ const HistoryPanel=({ meetings, onLoad, onClose, onDelete })=>(
       <div style={{overflowY:"auto",padding:"16px"}}>
         {meetings.length===0?<p style={{color:"var(--faint)",fontStyle:"italic",textAlign:"center",padding:"32px",fontSize:"14px"}}>No saved meetings yet.</p>
         :meetings.map(m=><div key={m.id} style={{border:"1px solid var(--border)",borderRadius:"10px",padding:"16px",marginBottom:"8px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card)"}}>
-          <div><div className="font-display" style={{fontSize:"17px",marginBottom:"3px"}}>{m.label||fmtDate(m.date)}</div><div style={{fontSize:"12px",color:"var(--faint)"}}>{fmtDate(m.date)} · {new Date(m.savedAt).toLocaleString()}</div></div>
+          <div>
+            <div className="font-display" style={{fontSize:"17px",marginBottom:"3px"}}>{m.label||fmtDate(m.date)}</div>
+            <div style={{fontSize:"12px",color:"var(--faint)",display:"flex",alignItems:"center",gap:"6px"}}>
+              {editingDate===m.id
+                ?<><input type="date" value={tempDate} onChange={e=>setTempDate(e.target.value)} style={{background:"var(--input-bg)",border:"1px solid var(--input-border)",color:"var(--text)",padding:"2px 6px",borderRadius:"6px",fontSize:"12px"}}/><button onClick={saveDateEdit} style={{background:"var(--green)",color:"#fff",border:"none",borderRadius:"4px",padding:"2px 7px",fontSize:"11px",cursor:"pointer",fontWeight:600}}>Save</button><button onClick={()=>setEditingDate(null)} style={{background:"var(--border)",color:"var(--muted)",border:"none",borderRadius:"4px",padding:"2px 7px",fontSize:"11px",cursor:"pointer"}}>Cancel</button></>
+                :<><span>{fmtDate(m.date)}</span><span>·</span><span>{new Date(m.savedAt).toLocaleString()}</span><button onClick={()=>startDateEdit(m)} title="Edit date" style={{background:"transparent",border:"none",color:"var(--faint)",cursor:"pointer",padding:"0 2px",display:"inline-flex",alignItems:"center"}}><Edit3 size={10}/></button></>
+              }
+            </div>
+          </div>
           <div style={{display:"flex",gap:"8px"}}><Btn variant="outline" size="sm" onClick={()=>onLoad(m.id)}>Open</Btn><Btn variant="danger" size="sm" onClick={()=>onDelete(m.id)}><Trash2 size={12}/></Btn></div>
         </div>)}
       </div>
     </div>
   </div>
-);
+  );
+};
 
 // ─────────────────────────────────────────────────────────
 // DATE SELECT SCREEN
@@ -1278,7 +1292,7 @@ export default function App() {
 
   const updateData=(path,value)=>setData(prev=>{ const next=JSON.parse(JSON.stringify(prev)); let c=next; for(let i=0;i<path.length-1;i++) c=c[path[i]]; c[path[path.length-1]]=value; return next; });
   const startEdit=(id)=>{ setDraftBak(JSON.parse(JSON.stringify(data))); setEditingSec(id); };
-  const saveEdit=()=>{ setEditingSec(null); setDraftBak(null); showFlash(); };
+  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); if(draftRecordId){ apiPut(`/api/meetings/${draftRecordId}`,{data}); localDirty.current=false; } setEditingSec(null); setDraftBak(null); showFlash(); };
   const cancelEdit=()=>{ if(draftBak) setData(draftBak); setEditingSec(null); setDraftBak(null); };
   const showFlash=()=>{ setFlash(true); setTimeout(()=>setFlash(false),1800); };
   const handleComment=(sectionId,comments)=>updateData(["section_comments",sectionId],comments);
@@ -1298,6 +1312,7 @@ export default function App() {
   };
   const loadMeeting=async(id)=>{ const m=await apiGet(`/api/meetings/${id}`); if(m&&!m.error){setData(hydrate(m));setViewingId(id);setShowHistory(false);setActive("company_health");} };
   const deleteMeeting=async(id)=>{ await apiDel(`/api/meetings/${id}`); const allMeetings=await apiGet('/api/meetings'); if(Array.isArray(allMeetings)) setMeetings(allMeetings); };
+  const updateMeetingDate=async(id,newDate)=>{ const m=await apiGet(`/api/meetings/${id}`); if(m&&!m.error) await apiPut(`/api/meetings/${id}`,{data:{...m,meeting_date:newDate,meeting_label:`Week of ${fmtDate(newDate)}`},date:newDate}); const allMeetings=await apiGet('/api/meetings'); if(Array.isArray(allMeetings)) setMeetings(allMeetings); };
   const exportData=()=>{ const b=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=`mv_performance_${data.meeting_date}.json`; a.click(); URL.revokeObjectURL(u); };
   const resetDraft=async()=>{ if(!confirm("Reset the current draft to a blank week?")) return; const f=mkBlankSeed(); if(draftRecordId) apiPut(`/api/meetings/${draftRecordId}`,{data:f}); lsDel('mv2:draft'); setData(f); };
 
@@ -1413,8 +1428,7 @@ export default function App() {
           {!isMobile&&<Btn variant="ghost" size="sm" onClick={()=>setPresentMode(!presentMode)}>{presentMode?<EyeOff size={13}/>:<Presentation size={13}/>}{presentMode?"Exit":"Present"}</Btn>}
           {!isMobile&&<Btn variant="ghost" size="sm" onClick={()=>setShowHistory(true)}><History size={13}/>History ({meetings.length})</Btn>}
           {!isMobile&&<Btn variant="ghost" size="sm" onClick={exportData}><Download size={13}/>Export</Btn>}
-          {!isMobile&&<Btn variant="ghost" size="sm" onClick={resetDraft}><RotateCcw size={13}/></Btn>}
-          <Btn variant="gold" size="sm" onClick={saveMeeting}><Save size={13}/>{!isMobile&&"Save Meeting"}</Btn>
+          {!isMobile&&<Btn variant="danger" size="sm" onClick={resetDraft}><Trash2 size={13}/>Delete Draft</Btn>}
           {isMobile&&<button onClick={()=>setSidebarOpen(o=>!o)} style={{background:"var(--card)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:"8px",width:"36px",height:"36px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}><Menu size={17}/></button>}
         </div>
       </header>
@@ -1445,7 +1459,8 @@ export default function App() {
               <button onClick={()=>{setShowHistory(true);setSidebarOpen(false);}} style={{display:"flex",alignItems:"center",gap:"10px",background:"none",border:"1px solid var(--border)",borderRadius:"8px",padding:"10px 12px",color:"var(--text)",cursor:"pointer",fontFamily:"inherit",fontSize:"13px"}}><History size={15}/><span>History ({meetings.length})</span></button>
               <button onClick={()=>{exportData();setSidebarOpen(false);}} style={{display:"flex",alignItems:"center",gap:"10px",background:"none",border:"1px solid var(--border)",borderRadius:"8px",padding:"10px 12px",color:"var(--text)",cursor:"pointer",fontFamily:"inherit",fontSize:"13px"}}><Download size={15}/><span>Export JSON</span></button>
               <button onClick={()=>{setPresentMode(!presentMode);setSidebarOpen(false);}} style={{display:"flex",alignItems:"center",gap:"10px",background:"none",border:"1px solid var(--border)",borderRadius:"8px",padding:"10px 12px",color:"var(--text)",cursor:"pointer",fontFamily:"inherit",fontSize:"13px"}}><Presentation size={15}/><span>Present mode</span></button>
-              <button onClick={()=>{setSidebarOpen(false);resetDraft();}} style={{display:"flex",alignItems:"center",gap:"10px",background:"var(--red-bg)",border:"1px solid rgba(255,77,106,0.2)",borderRadius:"8px",padding:"10px 12px",color:"var(--red)",cursor:"pointer",fontFamily:"inherit",fontSize:"13px"}}><RotateCcw size={15}/><span>Reset to blank week</span></button>
+              <button onClick={()=>{setSidebarOpen(false);saveMeeting();}} style={{display:"flex",alignItems:"center",gap:"10px",background:"var(--gold)",border:"none",borderRadius:"8px",padding:"10px 12px",color:"#07050F",cursor:"pointer",fontFamily:"inherit",fontSize:"13px",fontWeight:600}}><Save size={15}/><span>Archive Meeting</span></button>
+              <button onClick={()=>{setSidebarOpen(false);resetDraft();}} style={{display:"flex",alignItems:"center",gap:"10px",background:"var(--red-bg)",border:"1px solid rgba(255,77,106,0.2)",borderRadius:"8px",padding:"10px 12px",color:"var(--red)",cursor:"pointer",fontFamily:"inherit",fontSize:"13px"}}><Trash2 size={15}/><span>Delete Draft</span></button>
             </div>
           </aside>
         </div>
@@ -1469,9 +1484,13 @@ export default function App() {
                 </button>;
               })}
             </nav>
-            <div style={{padding:"12px 16px",borderTop:"1px solid var(--border)",fontSize:"11px",color:"var(--faint)",lineHeight:1.7}}>
-              <div style={{fontWeight:700,color:"var(--muted)",marginBottom:"4px",textTransform:"uppercase",fontSize:"9px",letterSpacing:"0.1em"}}>How it works</div>
-              Click <span style={{color:"var(--purple2)"}}>Edit numbers</span> on your section. Upload images, add headers, post notes. <span style={{color:"var(--gold)"}}>Save Meeting</span> archives the week.
+            <div style={{padding:"12px 16px",borderTop:"1px solid var(--border)"}}>
+              <Btn variant="gold" size="sm" onClick={saveMeeting}><Save size={13}/>Archive Meeting</Btn>
+              {flash&&<div style={{marginTop:"8px",fontSize:"11px",color:"var(--green)",fontWeight:600,display:"flex",alignItems:"center",gap:"4px"}}><Check size={11}/>Archived</div>}
+              <div style={{marginTop:"10px",fontSize:"11px",color:"var(--faint)",lineHeight:1.7}}>
+                <div style={{fontWeight:700,color:"var(--muted)",marginBottom:"4px",textTransform:"uppercase",fontSize:"9px",letterSpacing:"0.1em"}}>How it works</div>
+                Click <span style={{color:"var(--purple2)"}}>Edit numbers</span> on your section. Upload images, add headers, post notes. <span style={{color:"var(--gold)"}}>Archive Meeting</span> saves the week.
+              </div>
             </div>
           </aside>
         )}
@@ -1496,7 +1515,7 @@ export default function App() {
         </main>
       </div>
 
-      {showHistory&&<HistoryPanel meetings={meetings} onLoad={loadMeeting} onClose={()=>setShowHistory(false)} onDelete={deleteMeeting}/>}
+      {showHistory&&<HistoryPanel meetings={meetings} onLoad={loadMeeting} onClose={()=>setShowHistory(false)} onDelete={deleteMeeting} onUpdateDate={updateMeetingDate}/>}
     </div>
   );
 }
