@@ -81,9 +81,10 @@ const fmtPct = (n,d=1) => { const v=parseFloat(n); return isNaN(v)?"—":`${v.to
 const fmtNum = (n) => { const v=parseFloat(n); return isNaN(v)?"—":v.toLocaleString("en-US",{maximumFractionDigits:1}); };
 const delta  = (a,t) => { const av=parseFloat(a),tv=parseFloat(t); return (isNaN(av)||isNaN(tv)||tv===0)?null:((av-tv)/tv)*100; };
 const status = (d) => d===null?"neutral":d>=-5?"good":d>=-15?"warn":"bad";
-const todayISO = () => new Date().toISOString().slice(0,10);
-const nextTuesdayISO = () => { const d=new Date(); const diff=(2-d.getDay()+7)%7||7; d.setDate(d.getDate()+diff); return d.toISOString().slice(0,10); };
-const fmtDate  = (s) => s?new Date(s).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}):"";
+const localISO = (d=new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const todayISO = () => localISO();
+const nextTuesdayISO = () => { const d=new Date(); const diff=(2-d.getDay()+7)%7||7; d.setDate(d.getDate()+diff); return localISO(d); };
+const fmtDate  = (s) => { if(!s) return ""; const [y,m,dy]=s.split('-').map(Number); return new Date(y,m-1,dy).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}); };
 const uid = () => Math.random().toString(36).slice(2,9);
 
 // ─────────────────────────────────────────────────────────
@@ -284,7 +285,12 @@ const hydrate = (remote) => {
     if (v === null || v === undefined) continue;
     if (v && typeof v === 'object' && !Array.isArray(v) &&
         seed[k] && typeof seed[k] === 'object' && !Array.isArray(seed[k])) {
-      merged[k] = { ...seed[k], ...v };
+      // shallow merge but never overwrite a seed value with null/undefined from remote
+      const sub = { ...seed[k] };
+      for (const [sk, sv] of Object.entries(v)) {
+        if (sv !== null && sv !== undefined) sub[sk] = sv;
+      }
+      merged[k] = sub;
     } else {
       merged[k] = v;
     }
@@ -1156,17 +1162,20 @@ export default function App() {
       {/* TOP BAR */}
       <header style={{background:"var(--surface)",borderBottom:"1px solid var(--border)",padding:isMobile?"0 14px":"0 24px",height:"60px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:40,backdropFilter:"blur(8px)"}}>
         <div style={{display:"flex",alignItems:"center",gap:isMobile?"10px":"20px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+          <button onClick={()=>setShowDateSelect(true)} title="Home" style={{display:"flex",alignItems:"center",gap:"10px",background:"transparent",border:"none",cursor:"pointer",padding:0}}>
             <div style={{width:"28px",height:"28px",borderRadius:"8px",background:"linear-gradient(135deg,var(--purple),var(--purple2))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",fontWeight:700,color:"#fff"}}>M</div>
-            {!isMobile&&<div>
+            {!isMobile&&<div style={{textAlign:"left"}}>
               <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:"var(--gold)",lineHeight:1}}>Mindvalley · Revenue Task Force</div>
               <div className="font-display" style={{fontSize:"16px",color:"var(--text)",lineHeight:1.2,marginTop:"2px"}}>Revenue Meeting</div>
             </div>}
-          </div>
+          </button>
           {!isMobile&&<div style={{width:"1px",height:"28px",background:"var(--border)"}}/>}
           <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
             {!isMobile&&<button onClick={goToPrev} disabled={!hasPrev} title="Previous meeting" style={{background:"transparent",border:"1px solid var(--border)",color:hasPrev?"var(--text)":"var(--faint)",borderRadius:"6px",width:"28px",height:"28px",display:"flex",alignItems:"center",justifyContent:"center",cursor:hasPrev?"pointer":"default"}}><ChevronLeft size={13}/></button>}
-            <button onClick={()=>setShowDateSelect(true)} title="Change week" style={{background:"transparent",border:"1px solid var(--border)",color:"var(--text)",padding:"4px 10px",borderRadius:"8px",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"6px",fontFamily:"inherit"}}><Calendar size={13} style={{color:"var(--purple2)"}}/>{isMobile?(data.meeting_date||"Week"):(fmtDate(data.meeting_date)||"Select week")}</button>
+            {viewingId
+              ? <button onClick={()=>setShowDateSelect(true)} title="Change week" style={{background:"transparent",border:"1px solid var(--border)",color:"var(--text)",padding:"4px 10px",borderRadius:"8px",fontSize:"13px",cursor:"pointer",display:"flex",alignItems:"center",gap:"6px",fontFamily:"inherit"}}><Calendar size={13} style={{color:"var(--purple2)"}}/>{isMobile?(data.meeting_date||"Week"):(fmtDate(data.meeting_date)||"Select week")}</button>
+              : <input type="date" value={data.meeting_date||""} onChange={e=>handleDateChange(e.target.value)} style={{background:"transparent",border:"1px solid var(--border)",color:"var(--text)",padding:"4px 10px",borderRadius:"8px",fontSize:"13px",cursor:"text",fontFamily:"inherit"}}/>
+            }
             {!isMobile&&<button onClick={goToNext} disabled={!hasNext} title="Next meeting" style={{background:"transparent",border:"1px solid var(--border)",color:hasNext?"var(--text)":"var(--faint)",borderRadius:"6px",width:"28px",height:"28px",display:"flex",alignItems:"center",justifyContent:"center",cursor:hasNext?"pointer":"default"}}><ChevronRight size={13}/></button>}
             <Pill label={viewingId?"Past":(data.status==="finalized"?"Finalized":"Draft")} variant={viewingId?"neutral":(data.status==="finalized"?"good":"warn")}/>
             {!isMobile&&viewingId&&<Btn variant="outline" size="sm" onClick={returnToDraft}>← Draft</Btn>}
