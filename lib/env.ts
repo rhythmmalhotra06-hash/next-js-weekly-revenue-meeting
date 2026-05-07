@@ -29,7 +29,8 @@ const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 
   // Airtable — primary data source.
-  AIRTABLE_PAT: RequiredString,
+  AIRTABLE_API_KEY: RequiredString,
+  AIRTABLE_BASE_ID: RequiredString,
 });
 
 const parsed = EnvSchema.safeParse(process.env);
