@@ -29,8 +29,12 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+# Prisma schema needed at runtime so `prisma db push` can sync prod DB on first start.
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
-CMD ["npm", "start"]
+# Sync schema to prod DB on every start (idempotent — no-op once tables exist),
+# then boot Next.js. Fails loudly if the DB is unreachable.
+CMD ["sh", "-c", "npx prisma db push && npm start"]
