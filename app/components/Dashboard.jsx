@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Edit3, Save, X, Plus, Trash2, Calendar, History, Download,
   AlertCircle, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Presentation,
-  Check, RotateCcw, Eye, EyeOff, ArrowRight, MessageSquare, Paperclip,
-  Send, ChevronDown, ChevronUp, FileText, Star, Sun, Moon, Image,
-  Search, Flag, CircleCheck, Clock, Circle, Ban, Menu
+  Check, RotateCcw, EyeOff, ArrowRight, MessageSquare, Paperclip,
+  Send, ChevronDown, ChevronUp, FileText, Star, Sun, Moon, Image as ImageIcon,
+  Search, Flag, Menu
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────
@@ -158,7 +158,6 @@ const localISO = (d=new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).
 const todayISO = () => localISO();
 const nextTuesdayISO = () => { const d=new Date(); const diff=(2-d.getDay()+7)%7||7; d.setDate(d.getDate()+diff); return localISO(d); };
 const fmtDate  = (s) => { if(!s) return ""; const [y,m,dy]=s.split('-').map(Number); return new Date(y,m-1,dy).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}); };
-const fmtDateLong = (s) => { if(!s) return ""; const [y,m,dy]=s.split('-').map(Number); return new Date(y,m-1,dy).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}); };
 const getISOWeek = (s) => { if(!s) return ""; const [y,mo,dy]=s.split('-').map(Number); const d=new Date(y,mo-1,dy); d.setHours(0,0,0,0); d.setDate(d.getDate()+3-(d.getDay()+6)%7); const w1=new Date(d.getFullYear(),0,4); return 1+Math.round(((d-w1)/86400000-3+(w1.getDay()+6)%7)/7); };
 const uid = () => Math.random().toString(36).slice(2,9);
 
@@ -462,12 +461,12 @@ const SectionExtras = ({ cfg={}, onChange }) => {
   const hasContent=!!(cfg.header_image||cfg.header_text||cfg.page_notes||cfg.page_notes_2);
   return (
     <div style={{marginTop:"28px",marginBottom:"4px"}}>
-      {lightboxImg&&<div onClick={()=>setLightboxImg(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}><img src={lightboxImg} style={{maxWidth:"90vw",maxHeight:"85vh",objectFit:"contain",borderRadius:"10px"}} onClick={e=>e.stopPropagation()}/><button onClick={()=>setLightboxImg(null)} aria-label="Close image preview" style={{position:"absolute",top:20,right:20,background:"var(--card2)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:"50%",width:"32px",height:"32px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}><X size={14}/></button></div>}
+      {lightboxImg&&<div onClick={()=>setLightboxImg(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}><img src={lightboxImg} alt="" style={{maxWidth:"90vw",maxHeight:"85vh",objectFit:"contain",borderRadius:"10px"}} onClick={e=>e.stopPropagation()}/><button onClick={()=>setLightboxImg(null)} aria-label="Close image preview" style={{position:"absolute",top:20,right:20,background:"var(--card2)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:"50%",width:"32px",height:"32px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}><X size={14}/></button></div>}
       <div style={{border:"1px solid var(--border)",borderRadius:"16px",overflow:"hidden",background:"var(--card)"}}>
         {/* Toggle bar */}
         <button onClick={()=>setOpen(!open)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 18px",background:"transparent",border:"none",cursor:"pointer",color:"var(--text)",fontFamily:"inherit"}}>
           <span style={{display:"flex",alignItems:"center",gap:"10px"}}>
-            <Image size={14} style={{color:"var(--purple2)",flexShrink:0}}/>
+            <ImageIcon size={14} style={{color:"var(--purple2)",flexShrink:0}}/>
             <span style={{fontSize:"13px",fontWeight:500,color:"var(--muted)"}}>Section context — image, header &amp; notes</span>
             {hasContent&&<span style={{background:"var(--grn-bg)",color:"var(--green)",fontSize:"10px",fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",border:"1px solid rgba(46,204,113,0.2)",borderRadius:"20px",padding:"2px 8px"}}>Added</span>}
           </span>
@@ -489,7 +488,7 @@ const SectionExtras = ({ cfg={}, onChange }) => {
               </div>
             ) : (
               <div onClick={()=>fileRef.current?.click()} style={{border:"1.5px dashed var(--border)",borderRadius:"10px",padding:"28px 16px",textAlign:"center",cursor:"pointer",background:"var(--card2)",transition:"border-color 0.15s"}} onMouseEnter={e=>e.currentTarget.style.borderColor="var(--purple)"} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
-                <Image size={24} style={{color:"var(--faint)",marginBottom:"10px"}}/>
+                <ImageIcon size={24} style={{color:"var(--faint)",marginBottom:"10px"}}/>
                 <div style={{fontSize:"13px",color:"var(--muted)",fontWeight:500}}>Click to upload image</div>
                 <div style={{fontSize:"11px",color:"var(--faint)",marginTop:"4px"}}>Screenshots, charts, or reference materials — JPG, PNG, GIF</div>
               </div>
@@ -527,7 +526,7 @@ const CommentsPanel = ({ comments=[], onChange, sectionLabel }) => {
   const post=()=>{ if(!text.trim()&&!imgData) return; onChange([{id:uid(),author:author.trim()||"Anonymous",text:text.trim(),image_data:imgData,image_name:imgName,created_at:new Date().toISOString()},...comments]); setText(""); setImgData(null); setImgName(null); };
   return (
     <div style={{marginTop:"24px"}}>
-      {lightbox&&<div onClick={()=>setLightbox(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}><img src={lightbox} style={{maxWidth:"90vw",maxHeight:"85vh",objectFit:"contain",borderRadius:"10px"}}/><button onClick={()=>setLightbox(null)} aria-label="Close image preview" style={{position:"absolute",top:20,right:20,background:"var(--card2)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:"50%",width:"34px",height:"34px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}><X size={15}/></button></div>}
+      {lightbox&&<div onClick={()=>setLightbox(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}><img src={lightbox} alt="" style={{maxWidth:"90vw",maxHeight:"85vh",objectFit:"contain",borderRadius:"10px"}}/><button onClick={()=>setLightbox(null)} aria-label="Close image preview" style={{position:"absolute",top:20,right:20,background:"var(--card2)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:"50%",width:"34px",height:"34px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}><X size={15}/></button></div>}
       <button onClick={()=>setOpen(!open)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(122,18,212,0.06)",border:"1px solid rgba(122,18,212,0.15)",borderRadius:"10px",padding:"11px 16px",cursor:"pointer",color:"var(--text)",fontFamily:"inherit"}}>
         <span style={{display:"flex",alignItems:"center",gap:"8px",fontSize:"13px",fontWeight:500}}><MessageSquare size={14} style={{color:"var(--purple2)"}}/>Comments & Notes{comments.length>0&&<span style={{background:"var(--purple)",color:"#fff",fontSize:"11px",fontWeight:700,borderRadius:"20px",padding:"1px 7px"}}>{comments.length}</span>}</span>
         {open?<ChevronUp size={14} style={{color:"var(--muted)"}}/>:<ChevronDown size={14} style={{color:"var(--muted)"}}/>}
@@ -536,14 +535,14 @@ const CommentsPanel = ({ comments=[], onChange, sectionLabel }) => {
         <div style={{padding:"14px",borderBottom:"1px solid var(--border)"}}>
           <input type="text" value={author} onChange={e=>setAuthor(e.target.value)} placeholder="Your name" style={{width:"50%",marginBottom:"8px"}}/>
           <textarea value={text} onChange={e=>setText(e.target.value)} placeholder={`Note for ${sectionLabel}…`} rows={2} style={{width:"100%",resize:"vertical",marginBottom:"8px"}}/>
-          {imgData&&<div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"8px",background:"rgba(255,255,255,0.04)",borderRadius:"8px",padding:"8px 12px"}}><img src={imgData} onClick={()=>setLightbox(imgData)} style={{height:"48px",borderRadius:"6px",cursor:"zoom-in",objectFit:"cover"}}/><span style={{fontSize:"12px",color:"var(--muted)",flex:1}}>{imgName}</span><button onClick={()=>{setImgData(null);setImgName(null);}} aria-label="Remove attachment" style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer"}}><X size={13}/></button></div>}
+          {imgData&&<div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"8px",background:"rgba(255,255,255,0.04)",borderRadius:"8px",padding:"8px 12px"}}><img src={imgData} alt="" onClick={()=>setLightbox(imgData)} style={{height:"48px",borderRadius:"6px",cursor:"zoom-in",objectFit:"cover"}}/><span style={{fontSize:"12px",color:"var(--muted)",flex:1}}>{imgName}</span><button onClick={()=>{setImgData(null);setImgName(null);}} aria-label="Remove attachment" style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer"}}><X size={13}/></button></div>}
           <div style={{display:"flex",gap:"8px"}}><input type="file" ref={fileRef} accept="image/*" style={{display:"none"}} onChange={handleFile}/><Btn variant="ghost" size="sm" onClick={()=>fileRef.current?.click()}><Paperclip size={12}/>Attach image</Btn><Btn variant="primary" size="sm" onClick={post}><Send size={12}/>Post</Btn></div>
         </div>
         {comments.length===0?<div style={{padding:"20px",textAlign:"center",color:"var(--faint)",fontSize:"13px",fontStyle:"italic"}}>No notes yet.</div>
         :<div style={{maxHeight:"300px",overflowY:"auto"}}>{comments.map((c,i)=>(
           <div key={c.id} style={{padding:"12px 16px",borderBottom:i<comments.length-1?"1px solid var(--border)":"none",display:"flex",gap:"10px"}}>
             <div style={{width:"28px",height:"28px",borderRadius:"50%",background:"linear-gradient(135deg,var(--purple),var(--purple2))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:700,color:"#fff",flexShrink:0}}>{(c.author||"A")[0].toUpperCase()}</div>
-            <div style={{flex:1}}><div style={{display:"flex",alignItems:"baseline",gap:"10px",marginBottom:"4px"}}><span style={{fontSize:"13px",fontWeight:600,color:"var(--text)"}}>{c.author}</span><span style={{fontSize:"11px",color:"var(--faint)"}}>{new Date(c.created_at).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span></div>{c.text&&<p style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.6}}>{c.text}</p>}{c.image_data&&<img src={c.image_data} onClick={()=>setLightbox(c.image_data)} style={{marginTop:"8px",maxHeight:"120px",maxWidth:"260px",borderRadius:"8px",cursor:"zoom-in",objectFit:"cover",border:"1px solid var(--border)"}}/>}</div>
+            <div style={{flex:1}}><div style={{display:"flex",alignItems:"baseline",gap:"10px",marginBottom:"4px"}}><span style={{fontSize:"13px",fontWeight:600,color:"var(--text)"}}>{c.author}</span><span style={{fontSize:"11px",color:"var(--faint)"}}>{new Date(c.created_at).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span></div>{c.text&&<p style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.6}}>{c.text}</p>}{c.image_data&&<img src={c.image_data} alt="" onClick={()=>setLightbox(c.image_data)} style={{marginTop:"8px",maxHeight:"120px",maxWidth:"260px",borderRadius:"8px",cursor:"zoom-in",objectFit:"cover",border:"1px solid var(--border)"}}/>}</div>
             <button onClick={()=>onChange(comments.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--faint)",cursor:"pointer",paddingTop:"2px"}} aria-label="Remove item"><Trash2 size={12}/></button>
           </div>
         ))}</div>}
@@ -578,7 +577,7 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
     <div className="rg-2" style={{gap:"16px",marginBottom:"16px"}}>
       <Card><CardHead title="3 Must-Solve Issues This Week" action={editing&&<Btn variant="ghost" size="sm" onClick={()=>set(["must_solve"],[...ch.must_solve,{owner:"",title:"New issue",detail:""}])}><Plus size={12}/>Add</Btn>}/>
         <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:"14px"}}>
-          {ch.must_solve.length===0&&!editing&&<p style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic"}}>No must-solve issues added yet. Click "Edit numbers" to add.</p>}
+          {ch.must_solve.length===0&&!editing&&<p style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic"}}>No must-solve issues added yet. Click &quot;Edit numbers&quot; to add.</p>}
           {ch.must_solve.map((m,i)=><div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start"}}>
             <div style={{width:"3px",minHeight:"44px",background:"var(--red)",borderRadius:"2px",flexShrink:0,marginTop:"4px"}}/>
             {editing
@@ -596,7 +595,7 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
       </Card>
       <Card><CardHead title="Forward Cash Risk" action={editing&&<Btn variant="ghost" size="sm" onClick={()=>set(["forward_risks"],[...ch.forward_risks,"New risk — describe the scenario and financial exposure"])}><Plus size={12}/>Add</Btn>}/>
         <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:"10px"}}>
-          {ch.forward_risks.length===0&&!editing&&<p style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic"}}>No forward risks added yet. Click "Edit numbers" to add.</p>}
+          {ch.forward_risks.length===0&&!editing&&<p style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic"}}>No forward risks added yet. Click &quot;Edit numbers&quot; to add.</p>}
           {ch.forward_risks.map((r,i)=><div key={i} style={{display:"flex",gap:"10px",alignItems:"flex-start",background:"var(--red-bg)",border:"1px solid rgba(212,44,69,0.15)",borderRadius:"8px",padding:"12px 14px"}}>
             <AlertCircle size={14} style={{color:"var(--red)",flexShrink:0,marginTop:"2px"}}/>
             {editing
@@ -610,7 +609,7 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
     <Card><CardHead title="Full Year Rolling Forecast (3+9)"/>
       {editing
         ?<div style={{padding:"16px"}}>
-          <p style={{fontSize:"12px",color:"var(--muted)",marginBottom:"14px",fontStyle:"italic"}}>All figures in $M unless labelled. Fill in what you have — blanks show "—" in view mode.</p>
+          <p style={{fontSize:"12px",color:"var(--muted)",marginBottom:"14px",fontStyle:"italic"}}>All figures in $M unless labelled. Fill in what you have — blanks show &quot;—&quot; in view mode.</p>
           <div className="rg-4" style={{gap:"12px"}}>
             {[{g:"Sales",f:[["sa","Actual","$M"],["st","Target","$M"],["yoy","YoY","%"]]},{g:"Margins",f:[["gp","GP %","%"],["ea","EBITDA Act.","$M"],["ep","EBITDA %","%"],["et","EBITDA Tgt.","%"]]},{g:"Costs",f:[["oa","OPEX","$M"],["op","OPEX %","%"],["ot","OPEX Tgt.","%"],["ada","AdSpend","$M"],["adp","AdSpend %","%"],["adly","AdSpend LY","$M"],["hcp","HC %","%"],["hct","HC Tgt.","%"],["ga","G&A","$M"]]},{g:"Bottom Line",f:[["ni","Net Inc.","$M"],["nip","NI %","%"],["c","Cash","$M"],["ct","Cash Tgt.","$M"],["cly","Cash LY","$M"]]}].map(({g,f})=>(
               <div key={g} style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"8px",padding:"12px"}}>
@@ -713,7 +712,7 @@ const Membership = ({ data, editing, onEdit, onSave, onCancel, onChange, onComme
     </div>
     <Card><CardHead title="Initiatives This Week" action={editing&&<Btn variant="ghost" size="sm" onClick={()=>set(["initiatives"],[...m.initiatives,""])}><Plus size={12}/>Add</Btn>}/>
       <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:"8px"}}>
-        {m.initiatives.length===0&&!editing&&<p style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic"}}>No initiatives added yet — click "Edit numbers" then "Add" to enter this week's initiatives.</p>}
+        {m.initiatives.length===0&&!editing&&<p style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic"}}>No initiatives added yet — click &quot;Edit numbers&quot; then &quot;Add&quot; to enter this week&apos;s initiatives.</p>}
         {m.initiatives.map((it,i)=>editing?<div key={i} style={{display:"flex",gap:"8px"}}><TI value={it} onChange={v=>{const n=[...m.initiatives];n[i]=v;set(["initiatives"],n);}} placeholder="Describe the initiative — e.g. 'Launch $199 offer test on Manifesting pathway'" style={{flex:1}}/><button onClick={()=>set(["initiatives"],m.initiatives.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"var(--faint)",cursor:"pointer"}} aria-label="Remove item"><Trash2 size={13}/></button></div>:<div key={i} style={{display:"flex",gap:"10px",alignItems:"flex-start"}}><ChevronRight size={13} style={{color:"var(--gold)",flexShrink:0,marginTop:"3px"}}/><span style={{fontSize:"13px",color:"var(--muted)"}}>{it}</span></div>)}
       </div>
     </Card>
@@ -741,8 +740,8 @@ const Pathways = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment
             {p.commentary
               ?<p style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.8,whiteSpace:"pre-line"}}>{p.commentary}</p>
               :<div style={{background:"var(--card2)",border:"1px dashed var(--border)",borderRadius:"8px",padding:"16px"}}>
-                <p style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic",marginBottom:"10px"}}>No commentary added. Click "Edit numbers" to fill in. Suggested format:</p>
-                <p style={{fontSize:"12px",color:"var(--faint)",lineHeight:1.8}}>WINNING — [Pathway]: [What's working and why]<br/>BLEEDING — [Pathway]: [What's off]<br/>BUDGET SHIFTS — [Reallocations this week]<br/>CREATIVE — [New angles being tested]</p>
+                <p style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic",marginBottom:"10px"}}>No commentary added. Click &quot;Edit numbers&quot; to fill in. Suggested format:</p>
+                <p style={{fontSize:"12px",color:"var(--faint)",lineHeight:1.8}}>WINNING — [Pathway]: [What&apos;s working and why]<br/>BLEEDING — [Pathway]: [What&apos;s off]<br/>BUDGET SHIFTS — [Reallocations this week]<br/>CREATIVE — [New angles being tested]</p>
               </div>}
           </>}
       </div>
@@ -982,7 +981,6 @@ const PRIORITY_OPTIONS=["Critical","High","Medium"];
 
 const statusStyle=(s)=>s==="Open"?{bg:"var(--red-bg)",color:"var(--red)"}:s==="In Progress"?{bg:"var(--amb-bg)",color:"var(--amber)"}:s==="Complete"?{bg:"var(--grn-bg)",color:"var(--green)"}:s==="Blocked"?{bg:"rgba(122,18,212,0.12)",color:"var(--purple2)"}:{bg:"rgba(127,127,127,0.1)",color:"var(--muted)"};
 const prioStyle=(p)=>p==="Critical"?{bg:"var(--red-bg)",color:"var(--red)"}:p==="High"?{bg:"var(--amb-bg)",color:"var(--amber)"}:{bg:"rgba(127,127,127,0.08)",color:"var(--muted)"};
-const StatusIcon=({s})=>s==="Complete"?<CircleCheck size={13}/>:s==="Blocked"?<Ban size={13}/>:s==="In Progress"?<Clock size={13}/>:<Circle size={13}/>;
 
 // ─────────────────────────────────────────────────────────
 // TRANSCRIPT → AI PARSER PANEL
@@ -994,6 +992,7 @@ const TranscriptPanel = ({ onImport }) => {
   const [error,setError]=useState(null);
   const [preview,setPreview]=useState(null);
   const [filename,setFilename]=useState(null);
+  const [pendingFile,setPendingFile]=useState(null);
   const fileInputRef=useRef(null);
 
   const onFile=async(e)=>{
@@ -1002,19 +1001,35 @@ const TranscriptPanel = ({ onImport }) => {
     if(!f) return;
     if(f.size>10*1024*1024){ setError("File too large (max 10MB)"); return; }
     setError(null);
-    try {
-      const text=await f.text();
-      setTranscript(text);
+    setPreview(null);
+    const isDocx=/\.docx$/i.test(f.name);
+    if(isDocx){
+      // Binary — server extracts the text. Don't try to read into the textarea.
+      setPendingFile(f);
+      setTranscript("");
       setFilename(f.name);
-      setPreview(null);
-    } catch(err){ setError("Could not read file: "+err.message); }
+    } else {
+      try {
+        const text=await f.text();
+        setPendingFile(null);
+        setTranscript(text);
+        setFilename(f.name);
+      } catch(err){ setError("Could not read file: "+err.message); }
+    }
   };
 
   const parse=async()=>{
-    if(!transcript.trim()) return;
+    if(!pendingFile && !transcript.trim()) return;
     setLoading(true); setError(null); setPreview(null);
     try {
-      const res=await fetch("/api/parse-transcript",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({transcript})});
+      let res;
+      if(pendingFile){
+        const fd=new FormData();
+        fd.append("file",pendingFile);
+        res=await fetch("/api/parse-transcript",{method:"POST",body:fd});
+      } else {
+        res=await fetch("/api/parse-transcript",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({transcript})});
+      }
       const json=await res.json();
       if(!res.ok) throw new Error(json.error||"Parse failed");
       setPreview(json);
@@ -1025,7 +1040,7 @@ const TranscriptPanel = ({ onImport }) => {
   const confirmImport=()=>{
     if(!preview) return;
     onImport(preview.items||[],preview.decisions||[]);
-    setPreview(null); setTranscript(""); setFilename(null); setOpen(false);
+    setPreview(null); setTranscript(""); setFilename(null); setPendingFile(null); setOpen(false);
   };
 
   return (
@@ -1044,15 +1059,15 @@ const TranscriptPanel = ({ onImport }) => {
             <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--gold)"}}>Paste or upload transcript</div>
             <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
               {filename&&<span style={{fontSize:"11px",color:"var(--muted)",display:"flex",alignItems:"center",gap:"4px"}}><FileText size={11}/>{filename}</span>}
-              <input ref={fileInputRef} type="file" accept=".txt,.vtt,.srt,.md,text/plain,text/vtt" onChange={onFile} style={{display:"none"}}/>
+              <input ref={fileInputRef} type="file" accept=".txt,.vtt,.srt,.md,.docx,text/plain,text/vtt,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={onFile} style={{display:"none"}}/>
               <Btn variant="ghost" onClick={()=>fileInputRef.current?.click()}><Paperclip size={13}/>Upload file</Btn>
             </div>
           </div>
-          <p style={{fontSize:"12px",color:"var(--muted)",marginBottom:"8px",lineHeight:1.6}}>Paste the raw meeting transcript below, or upload a .txt / .vtt / .srt file. The AI will extract action items (owner, priority, due date, OKR) and decisions required — then you can review before importing.</p>
-          <textarea value={transcript} onChange={e=>{setTranscript(e.target.value);setFilename(null);}} placeholder="Paste the full meeting transcript here…" rows={8} style={{width:"100%",resize:"vertical",lineHeight:1.7,fontSize:"13px"}}/>
+          <p style={{fontSize:"12px",color:"var(--muted)",marginBottom:"8px",lineHeight:1.6}}>Paste the raw meeting transcript below, or upload a .txt / .vtt / .srt / .docx file. The AI will extract action items (owner, priority, due date, OKR) and decisions required — then you can review before importing.</p>
+          <textarea value={transcript} onChange={e=>{setTranscript(e.target.value);setFilename(null);setPendingFile(null);}} placeholder={pendingFile?`Will analyze uploaded file: ${pendingFile.name}`:"Paste the full meeting transcript here…"} rows={8} disabled={!!pendingFile} style={{width:"100%",resize:"vertical",lineHeight:1.7,fontSize:"13px",opacity:pendingFile?0.6:1}}/>
         </div>
         {error&&<div style={{background:"var(--red-bg)",border:"1px solid rgba(212,44,69,0.2)",borderRadius:"8px",padding:"10px 14px",fontSize:"13px",color:"var(--red)"}}>{error}</div>}
-        {!preview&&<Btn variant="primary" onClick={parse} disabled={loading||!transcript.trim()}>{loading?<><RotateCcw size={13} style={{animation:"spin 1s linear infinite"}}/>Analyzing…</>:<><Send size={13}/>Analyze with AI</>}</Btn>}
+        {!preview&&<Btn variant="primary" onClick={parse} disabled={loading||(!transcript.trim()&&!pendingFile)}>{loading?<><RotateCcw size={13} style={{animation:"spin 1s linear infinite"}}/>Analyzing…</>:<><Send size={13}/>Analyze with AI</>}</Btn>}
         {preview&&<>
           <div>
             <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--gold)",marginBottom:"10px"}}>Preview — {preview.items?.length||0} action items · {preview.decisions?.length||0} decisions</div>
@@ -1079,7 +1094,7 @@ const TranscriptPanel = ({ onImport }) => {
   );
 };
 
-const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment }) => {
+const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment, onImport }) => {
   const ai=data.action_items;
   const [filter,setFilter]=useState("All");
   const [search,setSearch]=useState("");
@@ -1209,10 +1224,7 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
     })}
 
     {/* TRANSCRIPT → AI PARSER */}
-    <TranscriptPanel onImport={(items,decisions)=>{
-      if(items?.length) setAI("items",[...ai.items,...items.map(it=>({...it,id:(ai.next_id||100)+Math.floor(Math.random()*1000)}))]);
-      if(decisions?.length) setAI("decisions",[...ai.decisions,...decisions]);
-    }}/>
+    <TranscriptPanel onImport={onImport}/>
 
     <SectionExtras cfg={data.page_config?.action_items||{}} onChange={v=>onChange(["page_config","action_items"],v)}/>
     <CommentsPanel comments={data.section_comments?.action_items} onChange={onComment} sectionLabel="Action Items"/>
@@ -1222,7 +1234,7 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
 // ─────────────────────────────────────────────────────────
 // SECTION: MEETING NOTES
 // ─────────────────────────────────────────────────────────
-const MeetingNotesSection = ({ data, onChange, onComment }) => (
+const MeetingNotesSection = ({ data, onChange }) => (
   <div className="fade-up">
     <div style={{marginBottom:"24px",paddingBottom:"20px",borderBottom:"1px solid var(--border)"}}>
       <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"8px"}}>Session record · All BUs</div>
@@ -1335,7 +1347,7 @@ const DateSelectScreen = ({ meetings, onSelect, onCreate }) => {
             </div>
           :<div style={{border:"1px dashed var(--border)",borderRadius:"16px",padding:"22px 24px",marginBottom:"10px",textAlign:"center"}}>
             <div style={{fontSize:"13px",color:"var(--muted)",marginBottom:"12px"}}>No active draft for this week</div>
-            <Btn variant="primary" onClick={()=>setShowNew(true)}>+ Create This Week's Meeting</Btn>
+            <Btn variant="primary" onClick={()=>setShowNew(true)}>+ Create This Week&apos;s Meeting</Btn>
           </div>
         }
 
@@ -1394,7 +1406,7 @@ export default function App() {
   const [theme,setTheme]=useState("light");
   const [draftRecordId,setDraftRecordId]=useState(null);
   const [viewingId,setViewingId]=useState(null); // null=draft, recordId=viewing past meeting
-  const [isMobile,setIsMobile]=useState(false);
+  const [isMobile,setIsMobile]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(max-width:767px)').matches);
   const [sidebarOpen,setSidebarOpen]=useState(false);
   const timer=useRef(null);
   const apiTimer=useRef(null);
@@ -1405,7 +1417,6 @@ export default function App() {
   useEffect(()=>{
     const mq=window.matchMedia('(max-width:767px)');
     const h=e=>setIsMobile(e.matches);
-    setIsMobile(mq.matches);
     mq.addEventListener('change',h);
     return ()=>mq.removeEventListener('change',h);
   },[]);
@@ -1442,6 +1453,41 @@ export default function App() {
   // Keep dataRef in sync so the polling closure always sees current data
   useEffect(()=>{ dataRef.current=data; },[data]);
 
+  const showFlash=()=>{ setFlash(true); setTimeout(()=>setFlash(false),1800); };
+  const updateData=(path,value)=>setData(prev=>{ const next=JSON.parse(JSON.stringify(prev)); let c=next; for(let i=0;i<path.length-1;i++) c=c[path[i]]; c[path[path.length-1]]=value; return next; });
+  const startEdit=(id)=>{ setDraftBak(JSON.parse(JSON.stringify(data))); setEditingSec(id); };
+  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); if(draftRecordId){ apiPut(`/api/meetings/${draftRecordId}`,{data}); localDirty.current=false; } setEditingSec(null); setDraftBak(null); showFlash(); };
+
+  // Atomic import-from-transcript: append AI-extracted items + decisions and
+  // immediately persist to localStorage + Airtable. Bypasses the 15s autosave
+  // debounce so the import survives a browser refresh.
+  const importTranscriptItems=(items,decisions)=>{
+    setData(prev=>{
+      const next=JSON.parse(JSON.stringify(prev));
+      const ai=next.action_items;
+      let nextId=ai.next_id||100;
+      if(items?.length){
+        ai.items=[...ai.items,...items.map(it=>({...it,id:nextId++}))];
+        ai.next_id=nextId;
+      }
+      if(decisions?.length){
+        const seenIds=new Set(ai.decisions.map(d=>d.id));
+        ai.decisions=[...ai.decisions,...decisions.map(d=>(!d.id||seenIds.has(d.id))?{...d,id:uid()}:d)];
+      }
+      lsSet('mv2:draft',next);
+      if(draftRecordId&&viewingId===null){
+        clearTimeout(timer.current);
+        clearTimeout(apiTimer.current);
+        apiPut(`/api/meetings/${draftRecordId}`,{data:next});
+        localDirty.current=false;
+      }
+      return next;
+    });
+    showFlash();
+  };
+  const cancelEdit=()=>{ if(draftBak) setData(draftBak); setEditingSec(null); setDraftBak(null); };
+  const handleComment=(sectionId,comments)=>updateData(["section_comments",sectionId],comments);
+
   // Draft auto-save: localStorage at 900ms, Airtable at 15s (skip when viewing past)
   useEffect(()=>{
     if(!ready||viewingId!==null) return;
@@ -1457,7 +1503,7 @@ export default function App() {
         }
       },15000);
     },900);
-  },[data,ready]);
+  },[data,ready,viewingId,draftRecordId]);
 
   // 5-second poll for collaborative updates (skip when viewing past)
   useEffect(()=>{
@@ -1471,14 +1517,7 @@ export default function App() {
       }
     },5000);
     return ()=>clearInterval(interval);
-  },[ready,draftRecordId,editingSec]);
-
-  const updateData=(path,value)=>setData(prev=>{ const next=JSON.parse(JSON.stringify(prev)); let c=next; for(let i=0;i<path.length-1;i++) c=c[path[i]]; c[path[path.length-1]]=value; return next; });
-  const startEdit=(id)=>{ setDraftBak(JSON.parse(JSON.stringify(data))); setEditingSec(id); };
-  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); if(draftRecordId){ apiPut(`/api/meetings/${draftRecordId}`,{data}); localDirty.current=false; } setEditingSec(null); setDraftBak(null); showFlash(); };
-  const cancelEdit=()=>{ if(draftBak) setData(draftBak); setEditingSec(null); setDraftBak(null); };
-  const showFlash=()=>{ setFlash(true); setTimeout(()=>setFlash(false),1800); };
-  const handleComment=(sectionId,comments)=>updateData(["section_comments",sectionId],comments);
+  },[ready,draftRecordId,editingSec,viewingId]);
 
   const saveMeeting=async()=>{
     if(!draftRecordId) return;
@@ -1689,6 +1728,7 @@ export default function App() {
           {Sec&&<Sec data={data}
             editing={editingSec===active&&!presentMode&&active!=="meeting_notes"}
             onEdit={()=>startEdit(active)} onSave={saveEdit} onCancel={cancelEdit} onChange={updateData}
+            onImport={importTranscriptItems}
             onComment={(c)=>{ if(active==="meeting_notes"){ updateData(["section_comments","meeting_notes"],c); } else { handleComment(active,c); } }}
           />}
 

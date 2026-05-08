@@ -270,6 +270,7 @@ export async function upsertActionItems(
   items: any[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   previousItems: any[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any[]> {
   const toCreate = items.filter((i) => !i._airtableId);
   const toUpdate = items.filter((i) => !!i._airtableId);

@@ -1,5 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import mammoth from "mammoth";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
+async function extractText(file: File): Promise<string> {
+  const name = file.name.toLowerCase();
+  const buf = Buffer.from(await file.arrayBuffer());
+  if (name.endsWith(".docx")) {
+    const { value } = await mammoth.extractRawText({ buffer: buf });
+    return value;
+  }
+  // Treat .txt / .vtt / .srt / .md / unknown as utf-8 text
+  return buf.toString("utf-8");
+}
 
 const OKRS = [
   "Revenue Protection",
@@ -91,7 +106,28 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { transcript } = await req.json();
+    const ct = req.headers.get("content-type") || "";
+    let transcript: string | undefined;
+
+    if (ct.includes("multipart/form-data")) {
+      const fd = await req.formData();
+      const file = fd.get("file");
+      if (!(file instanceof File)) {
+        return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+      }
+      try {
+        transcript = await extractText(file);
+      } catch (err) {
+        return NextResponse.json(
+          { error: `Could not extract text from ${file.name}: ${(err as Error).message}` },
+          { status: 400 }
+        );
+      }
+    } else {
+      const body = await req.json();
+      transcript = body.transcript;
+    }
+
     if (!transcript?.trim()) {
       return NextResponse.json({ error: "No transcript provided" }, { status: 400 });
     }
