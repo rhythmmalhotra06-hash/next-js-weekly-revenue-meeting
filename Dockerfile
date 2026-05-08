@@ -44,9 +44,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 USER nextjs
 EXPOSE 8080
 ENV PORT=8080
-# Background `prisma db push` so it doesn't block PORT=8080 bind (Cloud Run/Kessel
-# kills the container if it doesn't bind within the startup probe timeout).
-# Schema sync runs in parallel; output goes to /tmp/prisma-push.log for debugging.
-# Idempotent: no-op once tables exist. The runtime DATABASE_URL is auto-injected
-# by Kessel; the Dockerfile build-time placeholder doesn't reach runner stage.
-CMD ["sh", "-c", "(npx prisma db push > /tmp/prisma-push.log 2>&1 &) && exec npm start"]
+# Run `prisma db push` with a 90s timeout so output is visible in container
+# logs (vs. backgrounding which hides it). If it succeeds or times out, we
+# proceed to `npm start` regardless — Kessel's startup probe is 240s, so
+# we leave plenty of headroom for Next.js to bind to PORT=8080.
+# Idempotent: no-op once tables exist. The runtime DATABASE_URL is auto-
+# injected by Kessel; the Dockerfile build-time placeholder doesn't reach
+# this stage.
+CMD ["sh", "-c", "timeout 90 npx prisma db push 2>&1 || echo '[startup] prisma db push exited with non-zero or timed out; continuing to npm start'; exec npm start"]
