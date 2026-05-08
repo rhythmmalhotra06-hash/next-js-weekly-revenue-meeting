@@ -1,3 +1,5 @@
+import { env } from "@/lib/env";
+
 const BASE_URL = `https://api.airtable.com/v0/${process.env.AIRTABLE_BASE_ID}`;
 const MEETINGS_TABLE = "tblxsXzMj0wM7sx6Z";
 const ACTION_ITEMS_TABLE = "tbl1193a38XZ2hFR1";
@@ -20,6 +22,30 @@ async function airtableFetch(path: string, options: RequestInit = {}) {
     throw new Error(`Airtable ${options.method ?? "GET"} ${path} → ${res.status}: ${body}`);
   }
   return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// OKTA Employee Sync — sign-in allowlist
+// ---------------------------------------------------------------------------
+
+export async function isActiveOktaEmployee(email: string): Promise<boolean> {
+  const lower = email.trim().toLowerCase();
+  if (!lower) return false;
+  const escaped = lower.replace(/'/g, "\\'");
+  const formula = `AND(LOWER({Primary Email})='${escaped}',{OKTA Status}='ACTIVE')`;
+  const qs = new URLSearchParams({
+    filterByFormula: formula,
+    maxRecords: "1",
+  });
+  qs.append("fields[]", "Primary Email");
+  const url = `https://api.airtable.com/v0/${env.OKTA_AIRTABLE_BASE_ID}/${env.OKTA_AIRTABLE_TABLE_ID}?${qs}`;
+  const res = await fetch(url, { headers: authHeader() });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Airtable OKTA lookup → ${res.status}: ${body}`);
+  }
+  const data = (await res.json()) as { records?: unknown[] };
+  return Array.isArray(data.records) && data.records.length > 0;
 }
 
 // ---------------------------------------------------------------------------

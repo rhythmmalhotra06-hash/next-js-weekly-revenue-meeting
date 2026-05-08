@@ -3,6 +3,7 @@ import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
+import { isActiveOktaEmployee } from "@/lib/airtable";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -25,11 +26,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: "/sign-in",
   },
   callbacks: {
-    // Domain restriction — reject non-Mindvalley accounts before session creation.
+    // Gate sign-in to currently-employed Mindvalley staff.
+    // Domain check first (cheap), then live OKTA Employee Sync lookup.
+    // Fails closed on Airtable errors — better to lock out a real user during
+    // an outage than admit an ex-employee.
     async signIn({ profile }) {
       const email = profile?.email?.toLowerCase();
       if (!email) return false;
-      return email.endsWith(`@${env.AUTH_ALLOWED_EMAIL_DOMAIN}`);
+      if (!email.endsWith(`@${env.AUTH_ALLOWED_EMAIL_DOMAIN}`)) return false;
+      try {
+        return await isActiveOktaEmployee(email);
+      } catch (err) {
+        console.error("[auth] OKTA allowlist lookup failed", err);
+        return false;
+      }
     },
   },
 });

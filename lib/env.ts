@@ -35,6 +35,10 @@ const EnvSchema = z.object({
   // Airtable — primary data source.
   AIRTABLE_API_KEY: RequiredString,
   AIRTABLE_BASE_ID: RequiredString,
+
+  // OKTA Employee Sync base — sign-in allowlist (live lookup).
+  OKTA_AIRTABLE_BASE_ID: RequiredString.default("appf6GMygLkV4tYZi"),
+  OKTA_AIRTABLE_TABLE_ID: RequiredString.default("tbldC9kS9k8xziNGH"),
 });
 
 const parsed = EnvSchema.safeParse(process.env);
