@@ -14,6 +14,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // a trusted reverse proxy that sets X-Forwarded-Host correctly. We never deploy
   // to Vercel, so Auth.js's default Vercel-only auto-trust is wrong here.
   trustHost: true,
+  // TEMPORARY (round-5 diagnostic): verbose Auth.js logs to expose the exact
+  // redirect_uri Auth.js sends in the authorize + token-exchange steps.
+  // Remove once redirect_uri_mismatch is resolved.
+  debug: true,
   providers: [
     Google({
       clientId: env.GOOGLE_CLIENT_ID,
