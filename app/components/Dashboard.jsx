@@ -1107,6 +1107,20 @@ const TranscriptPanel = ({ onImport }) => {
   );
 };
 
+const parseDueToISO=(due)=>{
+  if(!due||due==="TBD"||due==="—")return"";
+  const months={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+  const m=due.match(/^(\w{3})\s+(\d{1,2})(?:,?\s*(\d{4}))?$/);
+  if(m){const mo=months[m[1]];if(mo){const yr=m[3]?parseInt(m[3]):2026;return`${yr}-${String(mo).padStart(2,"0")}-${String(parseInt(m[2])).padStart(2,"0")}`;}}
+  return due;
+};
+const formatISOToDue=(iso)=>{
+  if(!iso)return"TBD";
+  const d=new Date(iso+"T00:00:00");
+  if(isNaN(d.getTime()))return iso;
+  return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+};
+
 const ItemRow=({ it, editing, updateItem, confirmDel, setConfirmDel, deleteItem, itemIndex })=>{
   const ss=statusStyle(it.status); const ps=prioStyle(it.priority);
   const num=String(itemIndex+1).padStart(2,"0");
@@ -1122,7 +1136,7 @@ const ItemRow=({ it, editing, updateItem, confirmDel, setConfirmDel, deleteItem,
       {editing ? <input value={it.owner} onChange={e=>updateItem(it.id,"owner",e.target.value)} style={{fontSize:"13px",width:"100%",background:"transparent",border:"none",padding:"0",color:"var(--text)"}}/> : <span style={{color:"var(--text)"}}>{it.owner}</span>}
     </td>
     <td style={{padding:"12px 10px"}}>
-      {editing ? <input value={it.due} onChange={e=>updateItem(it.id,"due",e.target.value)} style={{fontSize:"13px",fontWeight:600,width:"80px",background:"transparent",border:"none",padding:"0",color:"var(--text)"}}/> : <span className="font-mono" style={{fontSize:"12px",fontWeight:600,color:"var(--text)"}}>{it.due}</span>}
+      {editing ? <input type="date" value={parseDueToISO(it.due)} onChange={e=>updateItem(it.id,"due",e.target.value?formatISOToDue(e.target.value):"TBD")} style={{fontSize:"12px",fontWeight:600,background:"transparent",border:"1px solid var(--border)",borderRadius:"4px",padding:"2px 4px",color:"var(--text)",colorScheme:"dark",cursor:"pointer"}}/> : <span className="font-mono" style={{fontSize:"12px",fontWeight:600,color:"var(--text)"}}>{it.due}</span>}
     </td>
     <td style={{padding:"12px 10px"}}>
       <select value={it.priority} onChange={e=>updateItem(it.id,"priority",e.target.value)} style={{background:ps.bg,color:ps.color,border:"none",borderRadius:"20px",padding:"3px 8px",fontSize:"11px",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{PRIORITY_OPTIONS.map(o=><option key={o}>{o}</option>)}</select>
