@@ -8,8 +8,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
     Google({
-      clientId: env.AUTH_GOOGLE_ID,
-      clientSecret: env.AUTH_GOOGLE_SECRET,
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
       // Force account chooser so users can switch Google accounts mid-session.
       authorization: { params: { prompt: "select_account" } },
     }),

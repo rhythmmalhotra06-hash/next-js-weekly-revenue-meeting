@@ -11,8 +11,8 @@ const EnvSchema = z.object({
 
   // Auth.js (NextAuth v5).
   AUTH_SECRET: RequiredString,
-  AUTH_GOOGLE_ID: RequiredString,
-  AUTH_GOOGLE_SECRET: RequiredString,
+  GOOGLE_CLIENT_ID: RequiredString,
+  GOOGLE_CLIENT_SECRET: RequiredString,
   AUTH_TRUST_HOST: z
     .string()
     .optional()
