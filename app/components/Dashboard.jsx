@@ -209,6 +209,7 @@ const mkSeed = () => ({
     {bu:"States",    target:29000,  actual:27000,  yoy:261,ytd_ebitda:-78,fy_ebitda:-98,why:"Ads paused · Relotting in-progress ETA May-26",risk:"Risk: 1 year inventory expiry · Mit: new ad pages and assets"}
   ],
   bu_total:{target:5300000,actual:4500000,yoy:-13,ytd_ebitda:21,fy_ebitda:12},
+  bu_insights:"",
 
   membership:{sales_actual:406939,sales_target:469168,new_subs:718,lost_subs:1036,roas_30d:60,cpl:11.69,cpl_prev:16.26,new_per_day:177,lost_per_day:259,refund_rate:13.7,refund_rate_ly:14.6,initiatives:["Offer testing $299 vs $199 (Manifesting + AI & Entrepreneurship)","Social Login on Landing Page","Concierge starts May 11 for Members","Pathways live on platform — more upsell/cross-sell","Manifesting Summit VIP upsell $39 vs $29","Build WhatsApp list and strategy"]},
 
@@ -289,6 +290,7 @@ const mkBlankSeed = () => {
       {bu:"States",    target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null,why:"",risk:""}
     ],
     bu_total:{target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null},
+    bu_insights:"",
     membership:{sales_actual:null,sales_target:null,new_subs:null,lost_subs:null,roas_30d:null,cpl:null,cpl_prev:null,new_per_day:null,lost_per_day:null,refund_rate:null,refund_rate_ly:null,initiatives:[]},
     pathways:{rows:[
       {name:"Manifesting",ad_spend:null,revenue:null,roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,aov:null},
@@ -663,8 +665,8 @@ const BUPerformance = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
               <td style={{padding:"14px",textAlign:"right"}}><Dt delta={d}/></td>
               <td style={{padding:"14px",textAlign:"right"}}><Pill label={st==="good"?"Green":st==="warn"?"Amber":"Red"} variant={st}/></td>
               <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.yoy} onChange={v=>{const n=[...rows];n[i]={...n[i],yoy:v};onChange(["bu_performance"],n);}} suffix="%"/>:fmtPct(r.yoy,0)}</td>
-              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{r.ytd_ebitda===null?"n.a":fmtPct(r.ytd_ebitda,0)}</td>
-              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{r.fy_ebitda===null?"n.a":fmtPct(r.fy_ebitda,0)}</td>
+              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.ytd_ebitda} onChange={v=>{const n=[...rows];n[i]={...n[i],ytd_ebitda:v};onChange(["bu_performance"],n);}} suffix="%"/>:(r.ytd_ebitda===null?"n.a":fmtPct(r.ytd_ebitda,0))}</td>
+              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.fy_ebitda} onChange={v=>{const n=[...rows];n[i]={...n[i],fy_ebitda:v};onChange(["bu_performance"],n);}} suffix="%"/>:(r.fy_ebitda===null?"n.a":fmtPct(r.fy_ebitda,0))}</td>
               <td style={{padding:"14px",maxWidth:"240px"}}>{editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><TI value={r.why} onChange={v=>{const n=[...rows];n[i]={...n[i],why:v};onChange(["bu_performance"],n);}} multi/><TI value={r.risk} onChange={v=>{const n=[...rows];n[i]={...n[i],risk:v};onChange(["bu_performance"],n);}} multi/></div>:<><div style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.5}}>{r.why}</div><div style={{fontSize:"12px",color:"var(--faint)",marginTop:"4px"}}>{r.risk}</div></>}</td>
             </tr>
           ); })}
@@ -683,6 +685,17 @@ const BUPerformance = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
         </tbody>
       </table>
     </div></Card>
+    <Card style={{marginTop:"16px"}}>
+      <CardHead title="Insights"/>
+      <div style={{padding:"16px"}}>
+        {editing
+          ?<TI value={data.bu_insights} onChange={v=>onChange(["bu_insights"],v)} multi style={{width:"100%",minHeight:"120px"}} placeholder="Add context on the numbers — highlights, risks, or anything to call out before the meeting..."/>
+          :data.bu_insights
+            ?<p style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.8,whiteSpace:"pre-line"}}>{data.bu_insights}</p>
+            :<div style={{background:"var(--card2)",border:"1px dashed var(--border)",borderRadius:"8px",padding:"16px"}}><p style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic"}}>No insights added yet — click &quot;Edit numbers&quot; to add context and highlights.</p></div>
+        }
+      </div>
+    </Card>
     <SectionExtras cfg={data.page_config?.bu_performance||{}} onChange={v=>onChange(["page_config","bu_performance"],v)}/>
     <CommentsPanel comments={data.section_comments?.bu_performance} onChange={onComment} sectionLabel="BU Performance"/>
   </div>;
@@ -1094,6 +1107,37 @@ const TranscriptPanel = ({ onImport }) => {
   );
 };
 
+const ItemRow=({ it, editing, updateItem, confirmDel, setConfirmDel, deleteItem, itemIndex })=>{
+  const ss=statusStyle(it.status); const ps=prioStyle(it.priority);
+  const num=String(itemIndex+1).padStart(2,"0");
+  const nc=it.priority==="Critical"?"var(--red)":it.priority==="High"?"var(--amber)":"var(--muted)";
+  return <tr className="ai-row" style={{borderBottom:"1px solid var(--border)",borderLeft:it.flagged?"3px solid var(--red)":"3px solid transparent"}}>
+    <td style={{padding:"12px 14px",fontFamily:"ui-monospace,'SF Mono','Roboto Mono',Menlo,Consolas,monospace",fontSize:"12px",fontWeight:700,color:nc,width:"36px"}}>{num}</td>
+    <td style={{padding:"12px 14px",minWidth:"220px"}}>
+      {editing
+        ? <><div><input value={it.title} onChange={e=>updateItem(it.id,"title",e.target.value)} style={{fontWeight:600,fontSize:"13px",width:"100%",background:"transparent",border:"none",borderBottom:"1px solid transparent",borderRadius:"0",padding:"0 0 2px",color:"var(--text)"}} onFocus={e=>e.target.style.borderBottomColor="var(--purple)"} onBlur={e=>e.target.style.borderBottomColor="transparent"}/></div><div><input value={it.note} onChange={e=>updateItem(it.id,"note",e.target.value)} style={{fontSize:"11.5px",color:"var(--muted)",width:"100%",background:"transparent",border:"none",borderBottom:"1px solid transparent",borderRadius:"0",padding:"0 0 1px"}} onFocus={e=>e.target.style.borderBottomColor="var(--purple)"} onBlur={e=>e.target.style.borderBottomColor="transparent"}/></div></>
+        : <><div style={{fontWeight:600,fontSize:"13px",color:"var(--text)",marginBottom:"2px"}}>{it.title}</div><div style={{fontSize:"11.5px",color:"var(--muted)",lineHeight:1.4}}>{it.note}</div></>}
+    </td>
+    <td style={{padding:"12px 10px",fontSize:"13px"}}>
+      {editing ? <input value={it.owner} onChange={e=>updateItem(it.id,"owner",e.target.value)} style={{fontSize:"13px",width:"100%",background:"transparent",border:"none",padding:"0",color:"var(--text)"}}/> : <span style={{color:"var(--text)"}}>{it.owner}</span>}
+    </td>
+    <td style={{padding:"12px 10px"}}>
+      {editing ? <input value={it.due} onChange={e=>updateItem(it.id,"due",e.target.value)} style={{fontSize:"13px",fontWeight:600,width:"80px",background:"transparent",border:"none",padding:"0",color:"var(--text)"}}/> : <span className="font-mono" style={{fontSize:"12px",fontWeight:600,color:"var(--text)"}}>{it.due}</span>}
+    </td>
+    <td style={{padding:"12px 10px"}}>
+      <select value={it.priority} onChange={e=>updateItem(it.id,"priority",e.target.value)} style={{background:ps.bg,color:ps.color,border:"none",borderRadius:"20px",padding:"3px 8px",fontSize:"11px",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{PRIORITY_OPTIONS.map(o=><option key={o}>{o}</option>)}</select>
+    </td>
+    <td style={{padding:"12px 10px"}}>
+      <select value={it.status} onChange={e=>updateItem(it.id,"status",e.target.value)} style={{background:ss.bg,color:ss.color,border:"none",borderRadius:"20px",padding:"3px 8px",fontSize:"11px",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{STATUS_OPTIONS.map(o=><option key={o}>{o}</option>)}</select>
+    </td>
+    <td style={{padding:"12px 8px",width:"40px"}}>
+      {editing&&(confirmDel===it.id
+        ? <div style={{display:"flex",gap:"4px",alignItems:"center"}}><span style={{fontSize:"11px",color:"var(--red)",fontWeight:700,whiteSpace:"nowrap"}}>Sure?</span><button onClick={()=>deleteItem(it.id)} style={{background:"var(--red)",color:"#fff",border:"none",borderRadius:"4px",padding:"2px 7px",fontSize:"11px",fontWeight:700,cursor:"pointer"}}>Yes</button><button onClick={()=>setConfirmDel(null)} style={{background:"var(--border)",color:"var(--muted)",border:"none",borderRadius:"4px",padding:"2px 7px",fontSize:"11px",cursor:"pointer"}}>No</button></div>
+        : <button onClick={()=>setConfirmDel(it.id)} style={{background:"none",border:"none",color:"var(--faint)",cursor:"pointer",padding:"4px",borderRadius:"4px",display:"flex",alignItems:"center"}} aria-label="Remove item"><Trash2 size={13}/></button>)}
+    </td>
+  </tr>;
+};
+
 const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment, onImport }) => {
   const ai=data.action_items;
   const [filter,setFilter]=useState("All");
@@ -1114,45 +1158,6 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
   const grouped=(prio)=>filtered.filter(it=>it.priority===prio);
   const stats=[{n:ai.items.length,l:"Total Items",c:"var(--purple)"},{n:ai.items.filter(it=>it.priority==="Critical"&&it.status!=="Complete").length,l:"Critical Open",c:"var(--red)"},{n:ai.items.filter(it=>it.status==="Open").length,l:"Open",c:"var(--amber)"},{n:ai.items.filter(it=>it.status==="In Progress").length,l:"In Progress",c:"var(--amber)"},{n:ai.items.filter(it=>it.status==="Complete").length,l:"Complete",c:"var(--green)"}];
   const dColors=["var(--green)","var(--amber)","var(--red)","var(--purple)","var(--red)"];
-
-  const ItemRow=({ it })=>{
-    const ss=statusStyle(it.status); const ps=prioStyle(it.priority);
-    const num=String(ai.items.findIndex(x=>x.id===it.id)+1).padStart(2,"0");
-    const nc=it.priority==="Critical"?"var(--red)":it.priority==="High"?"var(--amber)":"var(--muted)";
-    return <tr className="ai-row" style={{borderBottom:"1px solid var(--border)",borderLeft:it.flagged?"3px solid var(--red)":"3px solid transparent"}}>
-      <td style={{padding:"12px 14px",fontFamily:"ui-monospace,'SF Mono','Roboto Mono',Menlo,Consolas,monospace",fontSize:"12px",fontWeight:700,color:nc,width:"36px"}}>{num}</td>
-      <td style={{padding:"12px 14px",minWidth:"220px"}}>
-        {editing
-          ? <><div><input value={it.title} onChange={e=>updateItem(it.id,"title",e.target.value)} style={{fontWeight:600,fontSize:"13px",width:"100%",background:"transparent",border:"none",borderBottom:"1px solid transparent",borderRadius:"0",padding:"0 0 2px",color:"var(--text)"}} onFocus={e=>e.target.style.borderBottomColor="var(--purple)"} onBlur={e=>e.target.style.borderBottomColor="transparent"}/></div><div><input value={it.note} onChange={e=>updateItem(it.id,"note",e.target.value)} style={{fontSize:"11.5px",color:"var(--muted)",width:"100%",background:"transparent",border:"none",borderBottom:"1px solid transparent",borderRadius:"0",padding:"0 0 1px"}} onFocus={e=>e.target.style.borderBottomColor="var(--purple)"} onBlur={e=>e.target.style.borderBottomColor="transparent"}/></div></>
-          : <><div style={{fontWeight:600,fontSize:"13px",color:"var(--text)",marginBottom:"2px"}}>{it.title}</div><div style={{fontSize:"11.5px",color:"var(--muted)",lineHeight:1.4}}>{it.note}</div></>}
-      </td>
-      <td style={{padding:"12px 10px",fontSize:"13px"}}>
-        {editing ? <input value={it.owner} onChange={e=>updateItem(it.id,"owner",e.target.value)} style={{fontSize:"13px",width:"100%",background:"transparent",border:"none",padding:"0",color:"var(--text)"}}/> : <span style={{color:"var(--text)"}}>{it.owner}</span>}
-      </td>
-      <td style={{padding:"12px 10px",fontSize:"13px",color:"var(--muted)"}}>
-        {editing ? <input value={it.supporting} onChange={e=>updateItem(it.id,"supporting",e.target.value)} style={{fontSize:"13px",width:"100%",background:"transparent",border:"none",padding:"0",color:"var(--muted)"}}/> : <span>{it.supporting}</span>}
-      </td>
-      <td style={{padding:"12px 10px"}}>
-        {editing ? <input value={it.due} onChange={e=>updateItem(it.id,"due",e.target.value)} style={{fontSize:"13px",fontWeight:600,width:"80px",background:"transparent",border:"none",padding:"0",color:"var(--text)"}}/> : <span className="font-mono" style={{fontSize:"12px",fontWeight:600,color:"var(--text)"}}>{it.due}</span>}
-      </td>
-      <td style={{padding:"12px 10px"}}>
-        {editing ? <select value={it.okr} onChange={e=>updateItem(it.id,"okr",e.target.value)} style={{fontSize:"11px",color:"var(--purple2)",fontWeight:600,background:"transparent",border:"none",padding:"0",cursor:"pointer",width:"130px"}}>{OKR_OPTIONS.map(o=><option key={o}>{o}</option>)}</select> : <span style={{fontSize:"11px",color:"var(--purple2)",fontWeight:600}}>{it.okr}</span>}
-      </td>
-      <td style={{padding:"12px 10px"}}>
-        {/* Priority — always dropdown for quick re-classification */}
-        <select value={it.priority} onChange={e=>updateItem(it.id,"priority",e.target.value)} style={{background:ps.bg,color:ps.color,border:"none",borderRadius:"20px",padding:"3px 8px",fontSize:"11px",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{PRIORITY_OPTIONS.map(o=><option key={o}>{o}</option>)}</select>
-      </td>
-      <td style={{padding:"12px 10px"}}>
-        {/* Status — always dropdown for quick updates during meeting */}
-        <select value={it.status} onChange={e=>updateItem(it.id,"status",e.target.value)} style={{background:ss.bg,color:ss.color,border:"none",borderRadius:"20px",padding:"3px 8px",fontSize:"11px",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{STATUS_OPTIONS.map(o=><option key={o}>{o}</option>)}</select>
-      </td>
-      <td style={{padding:"12px 8px",width:"40px"}}>
-        {editing&&(confirmDel===it.id
-          ? <div style={{display:"flex",gap:"4px",alignItems:"center"}}><span style={{fontSize:"11px",color:"var(--red)",fontWeight:700,whiteSpace:"nowrap"}}>Sure?</span><button onClick={()=>deleteItem(it.id)} style={{background:"var(--red)",color:"#fff",border:"none",borderRadius:"4px",padding:"2px 7px",fontSize:"11px",fontWeight:700,cursor:"pointer"}}>Yes</button><button onClick={()=>setConfirmDel(null)} style={{background:"var(--border)",color:"var(--muted)",border:"none",borderRadius:"4px",padding:"2px 7px",fontSize:"11px",cursor:"pointer"}}>No</button></div>
-          : <button onClick={()=>setConfirmDel(it.id)} style={{background:"none",border:"none",color:"var(--faint)",cursor:"pointer",padding:"4px",borderRadius:"4px",display:"flex",alignItems:"center"}} aria-label="Remove item"><Trash2 size={13}/></button>)}
-      </td>
-    </tr>;
-  };
 
   return <div className="fade-up">
     <SHead owner="All" title="Action Item Register" cadence="Weekly · All BUs · Editable tracker" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
@@ -1215,8 +1220,8 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
         <div style={{fontSize:"16px",fontWeight:600,color:prio==="Critical"?"var(--red)":prio==="High"?"var(--amber)":"var(--text)",marginBottom:"12px"}}>{emoji} {label}</div>
         {rows.length>0
           ? <Card><div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
-              <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["#","Action Item","Owner","Supporting","Due","OKR","Priority","Status",""].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
-              <tbody>{rows.map(it=><ItemRow key={it.id} it={it}/>)}</tbody>
+              <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["#","Action Item","Owner","Due","Priority","Status",""].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
+              <tbody>{rows.map(it=><ItemRow key={it.id} it={it} editing={editing} updateItem={updateItem} confirmDel={confirmDel} setConfirmDel={setConfirmDel} deleteItem={deleteItem} itemIndex={ai.items.findIndex(x=>x.id===it.id)}/>)}</tbody>
             </table></div></Card>
           : <div style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic",padding:"12px 0"}}>No {prio.toLowerCase()} items match the current filter.</div>}
         {editing&&<button onClick={()=>addItem(prio)} style={{marginTop:"8px",padding:"6px 14px",background:"transparent",border:`1.5px dashed ${prio==="Critical"?"var(--red)":prio==="High"?"var(--amber)":"var(--border)"}`,borderRadius:"7px",color:prio==="Critical"?"var(--red)":prio==="High"?"var(--amber)":"var(--muted)",fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:"6px"}}><Plus size={12}/>Add {prio} item</button>}
