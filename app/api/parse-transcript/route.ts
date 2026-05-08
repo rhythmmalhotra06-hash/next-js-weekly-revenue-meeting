@@ -1,47 +1,91 @@
 import { NextRequest, NextResponse } from "next/server";
-import Groq from "groq-sdk";
+import Anthropic from "@anthropic-ai/sdk";
+
+const OKRS = [
+  "Revenue Protection",
+  "Revenue Forecast",
+  "Lead Generation",
+  "Launch Execution",
+  "Platform Readiness",
+  "Data & Reporting",
+  "Cash Management",
+  "Execution Cadence",
+  "Ops Clarity",
+  "Summit Experience",
+] as const;
 
 const SYSTEM = `You are an assistant that parses meeting transcripts and extracts structured data.
 From the transcript extract:
-1. All action items — concrete tasks someone committed to
+1. All action items — concrete tasks someone committed to (with a clear owner)
 2. All decisions required — unresolved items that need an exec call
-
-Return ONLY valid JSON in this exact shape (no markdown, no explanation):
-{
-  "items": [
-    {
-      "title": "short imperative sentence",
-      "note": "detail or context from the transcript",
-      "owner": "person's name",
-      "supporting": "others involved or —",
-      "due": "Month Day e.g. May 13",
-      "okr": "one of: Revenue Protection | Revenue Forecast | Lead Generation | Launch Execution | Platform Readiness | Data & Reporting | Cash Management | Execution Cadence | Ops Clarity | Summit Experience",
-      "priority": "Critical | High | Medium",
-      "status": "Open",
-      "flagged": false
-    }
-  ],
-  "decisions": [
-    {
-      "id": "unique short string",
-      "title": "decision needed in one line",
-      "body": "context — what's blocked, who decides, what the options are"
-    }
-  ]
-}
 
 Rules:
 - Only include genuine action items (someone agreed to do something with a clear owner)
-- priority = Critical if explicitly urgent/blocking, High if important, Medium otherwise
-- due = best estimate from the transcript; use "TBD" if not mentioned
+- priority = "Critical" if explicitly urgent/blocking, "High" if important, "Medium" otherwise
+- due = best estimate from the transcript (e.g. "May 13"); use "TBD" if not mentioned
 - flagged = true only if the transcript marks it as urgent or critical
+- supporting = others involved, or "—" if none
+- okr = pick the single best fit from the allowed list
 - Return empty arrays if none found — never return null`;
 
+const SCHEMA = {
+  type: "object",
+  properties: {
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Short imperative sentence" },
+          note: { type: "string", description: "Detail or context from the transcript" },
+          owner: { type: "string", description: "Person's name" },
+          supporting: { type: "string", description: "Others involved, or '—'" },
+          due: { type: "string", description: "Month Day e.g. May 13, or TBD" },
+          okr: { type: "string", enum: OKRS },
+          priority: { type: "string", enum: ["Critical", "High", "Medium"] },
+          status: { type: "string", enum: ["Open"] },
+          flagged: { type: "boolean" },
+        },
+        required: [
+          "title",
+          "note",
+          "owner",
+          "supporting",
+          "due",
+          "okr",
+          "priority",
+          "status",
+          "flagged",
+        ],
+        additionalProperties: false,
+      },
+    },
+    decisions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Unique short string" },
+          title: { type: "string", description: "Decision needed in one line" },
+          body: {
+            type: "string",
+            description: "Context — what's blocked, who decides, what the options are",
+          },
+        },
+        required: ["id", "title", "body"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["items", "decisions"],
+  additionalProperties: false,
+};
+
 export async function POST(req: NextRequest) {
-  const key = process.env.GROQ_API_KEY;
+  const key = process.env.ANTHROPIC_API_KEY;
   if (!key) {
     return NextResponse.json(
-      { error: "GROQ_API_KEY not set in .env.local" },
+      { error: "ANTHROPIC_API_KEY not set in .env.local" },
       { status: 500 }
     );
   }
@@ -52,21 +96,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No transcript provided" }, { status: 400 });
     }
 
-    const client = new Groq({ apiKey: key });
-    const msg = await client.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      max_tokens: 4096,
-      temperature: 0.1,
+    const client = new Anthropic({ apiKey: key });
+    const stream = client.messages.stream({
+      model: "claude-sonnet-4-6",
+      max_tokens: 16000,
+      system: [
+        {
+          type: "text",
+          text: SYSTEM,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      output_config: {
+        format: { type: "json_schema", schema: SCHEMA },
+      },
       messages: [
-        { role: "system", content: SYSTEM },
         { role: "user", content: `Transcript:\n\n${transcript}` },
       ],
     });
 
-    const text = msg.choices[0]?.message?.content || "";
-    // Strip markdown code fences if the model wraps the JSON
-    const clean = text.replace(/^```(?:json)?\n?/,"").replace(/\n?```$/,"").trim();
-    const parsed = JSON.parse(clean);
+    const msg = await stream.finalMessage();
+    const text = msg.content
+      .filter((b): b is Anthropic.TextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("");
+    const parsed = JSON.parse(text);
     return NextResponse.json(parsed);
   } catch (err) {
     console.error("[POST /api/parse-transcript]", err);

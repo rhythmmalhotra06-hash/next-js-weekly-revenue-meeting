@@ -993,6 +993,22 @@ const TranscriptPanel = ({ onImport }) => {
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState(null);
   const [preview,setPreview]=useState(null);
+  const [filename,setFilename]=useState(null);
+  const fileInputRef=useRef(null);
+
+  const onFile=async(e)=>{
+    const f=e.target.files?.[0];
+    e.target.value="";
+    if(!f) return;
+    if(f.size>10*1024*1024){ setError("File too large (max 10MB)"); return; }
+    setError(null);
+    try {
+      const text=await f.text();
+      setTranscript(text);
+      setFilename(f.name);
+      setPreview(null);
+    } catch(err){ setError("Could not read file: "+err.message); }
+  };
 
   const parse=async()=>{
     if(!transcript.trim()) return;
@@ -1009,7 +1025,7 @@ const TranscriptPanel = ({ onImport }) => {
   const confirmImport=()=>{
     if(!preview) return;
     onImport(preview.items||[],preview.decisions||[]);
-    setPreview(null); setTranscript(""); setOpen(false);
+    setPreview(null); setTranscript(""); setFilename(null); setOpen(false);
   };
 
   return (
@@ -1024,9 +1040,16 @@ const TranscriptPanel = ({ onImport }) => {
       </button>
       {open&&<div style={{padding:"18px",borderTop:"1px solid var(--border)",display:"flex",flexDirection:"column",gap:"14px"}}>
         <div>
-          <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--gold)",marginBottom:"8px"}}>Paste transcript</div>
-          <p style={{fontSize:"12px",color:"var(--muted)",marginBottom:"8px",lineHeight:1.6}}>Paste the raw meeting transcript below. The AI will extract action items (owner, priority, due date, OKR) and decisions required — then you can review before importing.</p>
-          <textarea value={transcript} onChange={e=>setTranscript(e.target.value)} placeholder="Paste the full meeting transcript here…" rows={8} style={{width:"100%",resize:"vertical",lineHeight:1.7,fontSize:"13px"}}/>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px",gap:"10px",flexWrap:"wrap"}}>
+            <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--gold)"}}>Paste or upload transcript</div>
+            <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+              {filename&&<span style={{fontSize:"11px",color:"var(--muted)",display:"flex",alignItems:"center",gap:"4px"}}><FileText size={11}/>{filename}</span>}
+              <input ref={fileInputRef} type="file" accept=".txt,.vtt,.srt,.md,text/plain,text/vtt" onChange={onFile} style={{display:"none"}}/>
+              <Btn variant="ghost" onClick={()=>fileInputRef.current?.click()}><Paperclip size={13}/>Upload file</Btn>
+            </div>
+          </div>
+          <p style={{fontSize:"12px",color:"var(--muted)",marginBottom:"8px",lineHeight:1.6}}>Paste the raw meeting transcript below, or upload a .txt / .vtt / .srt file. The AI will extract action items (owner, priority, due date, OKR) and decisions required — then you can review before importing.</p>
+          <textarea value={transcript} onChange={e=>{setTranscript(e.target.value);setFilename(null);}} placeholder="Paste the full meeting transcript here…" rows={8} style={{width:"100%",resize:"vertical",lineHeight:1.7,fontSize:"13px"}}/>
         </div>
         {error&&<div style={{background:"var(--red-bg)",border:"1px solid rgba(212,44,69,0.2)",borderRadius:"8px",padding:"10px 14px",fontSize:"13px",color:"var(--red)"}}>{error}</div>}
         {!preview&&<Btn variant="primary" onClick={parse} disabled={loading||!transcript.trim()}>{loading?<><RotateCcw size={13} style={{animation:"spin 1s linear infinite"}}/>Analyzing…</>:<><Send size={13}/>Analyze with AI</>}</Btn>}
@@ -1050,7 +1073,7 @@ const TranscriptPanel = ({ onImport }) => {
             <Btn variant="ghost" onClick={()=>setPreview(null)}><RotateCcw size={13}/>Re-analyze</Btn>
           </div>
         </>}
-        <p style={{fontSize:"11px",color:"var(--faint)"}}>Powered by Groq · llama-3.3-70b. Items are appended — existing register is not overwritten.</p>
+        <p style={{fontSize:"11px",color:"var(--faint)"}}>Powered by Claude Sonnet 4.6. Items are appended — existing register is not overwritten.</p>
       </div>}
     </div>
   );
