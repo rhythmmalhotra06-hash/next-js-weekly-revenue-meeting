@@ -4,9 +4,22 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 
-// Sentinel log to confirm the deployed image contains this commit.
-// If this line is missing from Cloud Run boot logs, the rollout served stale code.
-console.log("[auth] init: trustHost=true allowedDomain=" + env.AUTH_ALLOWED_EMAIL_DOMAIN);
+// Boot sentinel — confirms the deployed image contains this commit AND
+// surfaces the auth-relevant env so we can diagnose redirect_uri_mismatch.
+// The `expected_callback` value must match a Google OAuth Console
+// "Authorized redirect URI" byte-for-byte.
+{
+  const authUrl = process.env.AUTH_URL || "(unset)";
+  const expectedCallback = process.env.AUTH_URL
+    ? process.env.AUTH_URL.replace(/\/$/, "") + "/api/auth/callback/google"
+    : "(unset — AUTH_URL not set)";
+  console.log(
+    "[auth] init: trustHost=true"
+      + " allowedDomain=" + env.AUTH_ALLOWED_EMAIL_DOMAIN
+      + " AUTH_URL=" + authUrl
+      + " expected_callback=" + expectedCallback,
+  );
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
