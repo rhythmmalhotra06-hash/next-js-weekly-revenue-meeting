@@ -4,20 +4,12 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 
-// Sentinel log to confirm the deployed image contains this commit.
-// If this line is missing from Cloud Run boot logs, the rollout served stale code.
-console.log("[auth] init: trustHost=true allowedDomain=" + env.AUTH_ALLOWED_EMAIL_DOMAIN);
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  // Always trust forwarded host on this deploy. Cloud Run / Kessel sit behind
-  // a trusted reverse proxy that sets X-Forwarded-Host correctly. We never deploy
-  // to Vercel, so Auth.js's default Vercel-only auto-trust is wrong here.
+  // Always trust forwarded host — Cloud Run / Kessel sit behind a reverse
+  // proxy that sets X-Forwarded-Host correctly. We never deploy to Vercel,
+  // so Auth.js's default Vercel-only auto-trust is wrong here.
   trustHost: true,
-  // TEMPORARY (round-5 diagnostic): verbose Auth.js logs to expose the exact
-  // redirect_uri Auth.js sends in the authorize + token-exchange steps.
-  // Remove once redirect_uri_mismatch is resolved.
-  debug: true,
   providers: [
     Google({
       clientId: env.GOOGLE_CLIENT_ID,
