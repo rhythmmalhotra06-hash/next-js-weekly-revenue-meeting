@@ -44,6 +44,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 USER nextjs
 EXPOSE 8080
 ENV PORT=8080
-# Push schema on every cold start — idempotent, skips if tables exist.
-# Runs before npm start; Kessel's 240s startup probe gives plenty of headroom.
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss 2>&1 && exec npm start"]
+# Background prisma db push so npm start binds PORT=8080 immediately.
+# Push completes in ~5s; Next.js startup takes ~3s — tables ready before
+# first request. Output goes to stdout via tee so it appears in kessel logs.
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss 2>&1 | tee /tmp/prisma-push.log & exec npm start"]
