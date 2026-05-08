@@ -1198,7 +1198,10 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:"12px"}}>
         {ai.decisions.map((d,i)=>(
           <div key={d.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:"10px",padding:"16px",borderTop:`3px solid ${dColors[i%dColors.length]}`}}>
-            <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--muted)",marginBottom:"6px"}}>Decision {String(i+1).padStart(2,"0")}</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"6px"}}>
+              <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--muted)"}}>Decision {String(i+1).padStart(2,"0")}</div>
+              {editing&&<button onClick={()=>setAI("decisions",ai.decisions.filter((_,j)=>j!==i))} style={{background:"transparent",border:"none",padding:"2px",cursor:"pointer",color:"var(--faint)",display:"flex",alignItems:"center"}} title="Delete decision"><Trash2 size={13}/></button>}
+            </div>
             {editing
               ? <><input value={d.title} onChange={e=>{const n=[...ai.decisions];n[i]={...n[i],title:e.target.value};setAI("decisions",n);}} style={{background:"transparent",border:"none",padding:"0 0 4px",borderBottom:`1px solid ${dColors[i%dColors.length]}`,color:dColors[i%dColors.length],fontWeight:700,fontSize:"14px",width:"100%",marginBottom:"8px"}}/><textarea value={d.body} onChange={e=>{const n=[...ai.decisions];n[i]={...n[i],body:e.target.value};setAI("decisions",n);}} rows={2} style={{fontSize:"12px",color:"var(--muted)",lineHeight:1.6,width:"100%",resize:"vertical",background:"transparent",border:"none",padding:"0"}}/></>
               : <><div style={{fontSize:"14px",fontWeight:700,color:dColors[i%dColors.length],marginBottom:"8px"}}>{d.title}</div><p style={{fontSize:"12px",color:"var(--muted)",lineHeight:1.6}}>{d.body}</p></>}
@@ -1455,9 +1458,12 @@ export default function App() {
     if(draftSummary){
       const remote=await apiGet(`/api/meetings/${draftSummary.id}`);
       if(remote&&!remote.error){
-        setData(hydrate(remote));
+        // If localStorage has unsaved changes (dirty flag), prefer it over Airtable
+        // so a reload within the 15s Airtable debounce window doesn't lose edits.
+        const local=lsGet('mv2:draft');
+        const dirty=lsGet('mv2:dirty');
+        if(dirty&&local){ setData(hydrate(local)); } else { setData(hydrate(remote)); lsSet('mv2:draft',remote); }
         setDraftRecordId(draftSummary.id);
-        lsSet('mv2:draft',remote);
       }
     } else {
       // Fall back to localStorage cache (handles offline or when no Airtable draft)
@@ -1475,7 +1481,7 @@ export default function App() {
   const showFlash=()=>{ setFlash(true); setTimeout(()=>setFlash(false),1800); };
   const updateData=(path,value)=>setData(prev=>{ const next=JSON.parse(JSON.stringify(prev)); let c=next; for(let i=0;i<path.length-1;i++) c=c[path[i]]; c[path[path.length-1]]=value; return next; });
   const startEdit=(id)=>{ setDraftBak(JSON.parse(JSON.stringify(data))); setEditingSec(id); };
-  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); if(draftRecordId){ apiPut(`/api/meetings/${draftRecordId}`,{data}); localDirty.current=false; } setEditingSec(null); setDraftBak(null); showFlash(); };
+  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); if(draftRecordId){ apiPut(`/api/meetings/${draftRecordId}`,{data}); localDirty.current=false; lsDel('mv2:dirty'); } setEditingSec(null); setDraftBak(null); showFlash(); };
 
   // Atomic import-from-transcript: append AI-extracted items + decisions and
   // immediately persist to localStorage + Airtable. Bypasses the 15s autosave
@@ -1499,6 +1505,7 @@ export default function App() {
         clearTimeout(apiTimer.current);
         apiPut(`/api/meetings/${draftRecordId}`,{data:next});
         localDirty.current=false;
+        lsDel('mv2:dirty');
       }
       return next;
     });
@@ -1514,11 +1521,13 @@ export default function App() {
     clearTimeout(timer.current);
     timer.current=setTimeout(()=>{
       lsSet('mv2:draft',data);
+      lsSet('mv2:dirty',true);
       clearTimeout(apiTimer.current);
       apiTimer.current=setTimeout(async()=>{
         if(draftRecordId){
           await apiPut(`/api/meetings/${draftRecordId}`,{data});
           localDirty.current=false; // Airtable is now in sync
+          lsDel('mv2:dirty');
         }
       },15000);
     },900);
@@ -1555,7 +1564,7 @@ export default function App() {
   const deleteMeeting=async(id)=>{ try { await apiDel(`/api/meetings/${id}`); const allMeetings=await apiGet('/api/meetings'); if(Array.isArray(allMeetings)) setMeetings(allMeetings); } catch(e){ alert(`Failed to delete meeting: ${e.message}`); } };
   const updateMeetingDate=async(id,newDate)=>{ const m=await apiGet(`/api/meetings/${id}`); if(m&&!m.error) await apiPut(`/api/meetings/${id}`,{data:{...m,meeting_date:newDate,meeting_label:`Week of ${fmtDate(newDate)}`},date:newDate}); const allMeetings=await apiGet('/api/meetings'); if(Array.isArray(allMeetings)) setMeetings(allMeetings); };
   const exportData=()=>{ const b=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=`mv_performance_${data.meeting_date}.json`; a.click(); URL.revokeObjectURL(u); };
-  const resetDraft=async()=>{ if(!confirm("Reset the current draft to a blank week?")) return; const f=mkBlankSeed(); if(draftRecordId) apiPut(`/api/meetings/${draftRecordId}`,{data:f}); lsDel('mv2:draft'); setData(f); };
+  const resetDraft=async()=>{ if(!confirm("Reset the current draft to a blank week?")) return; const f=mkBlankSeed(); if(draftRecordId) apiPut(`/api/meetings/${draftRecordId}`,{data:f}); lsDel('mv2:draft'); lsDel('mv2:dirty'); setData(f); };
 
   // Date change: update both date + label, auto-save handles the Airtable write
   const handleDateChange=(newDate)=>{
