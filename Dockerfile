@@ -44,4 +44,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 USER nextjs
 EXPOSE 8080
 ENV PORT=8080
-CMD ["npm", "start"]
+# Push schema on every cold start — idempotent, skips if tables exist.
+# Runs before npm start; Kessel's 240s startup probe gives plenty of headroom.
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss 2>&1 && exec npm start"]
