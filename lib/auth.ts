@@ -6,10 +6,12 @@ import { env } from "@/lib/env";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  // Always trust forwarded host — Cloud Run / Kessel sit behind a reverse
-  // proxy that sets X-Forwarded-Host correctly. We never deploy to Vercel,
-  // so Auth.js's default Vercel-only auto-trust is wrong here.
+  // Cloud Run / Kessel sit behind a reverse proxy that sets X-Forwarded-Host.
+  // Auth.js's default Vercel-only auto-trust is wrong here.
   trustHost: true,
+  // JWT sessions: cookie-only, no per-request DB read. The adapter is still
+  // used for OAuth account linking on first login (users + accounts tables).
+  session: { strategy: "jwt" },
   providers: [
     Google({
       clientId: env.GOOGLE_CLIENT_ID,
