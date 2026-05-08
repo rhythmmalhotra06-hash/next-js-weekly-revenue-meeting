@@ -42,8 +42,11 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 USER nextjs
-EXPOSE 3000
-ENV PORT=3000
-# Sync schema to prod DB on every start (idempotent — no-op once tables exist),
-# then boot Next.js. Fails loudly if the DB is unreachable.
-CMD ["sh", "-c", "npx prisma db push && npm start"]
+EXPOSE 8080
+ENV PORT=8080
+# Background `prisma db push` so it doesn't block PORT=8080 bind (Cloud Run/Kessel
+# kills the container if it doesn't bind within the startup probe timeout).
+# Schema sync runs in parallel; output goes to /tmp/prisma-push.log for debugging.
+# Idempotent: no-op once tables exist. The runtime DATABASE_URL is auto-injected
+# by Kessel; the Dockerfile build-time placeholder doesn't reach runner stage.
+CMD ["sh", "-c", "(npx prisma db push > /tmp/prisma-push.log 2>&1 &) && exec npm start"]
