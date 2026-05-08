@@ -156,10 +156,9 @@ const mkSeed = () => ({
 
   states:{mtd_sales:null,mtd_target:null,bottles_sold:null,bottles_target:null,revenue_per_session:null,units_left:null,days_to_expiry:null,sell_through_required:null,sell_through_actual:null,write_off_projection:null,roas_7d:null,roas_30d:null,roas_90d:null,cac_payback:null,cpl:null,repeat_rate:null,time_to_2nd:null,aov:null,paid_pct:null,organic_pct:null,notes:"Ads paused. Relotting in progress, ETA May 2026."},
 
-  product:{platform_revenue_mtd:null,engagement:61.8,engagement_wow:0.1,engagement_target_delta:-3.2,activation:79.1,activation_wow:1.0,activation_target_delta:-10.9,
-    revenue_refund_retention:[{metric:"Platform Revenue MTD",actual:null,mom:null,vs_target:null},{metric:"Y-MVM Refund",actual:9.41,mom:-0.7,vs_target:1.5},{metric:"Y-M13 retention",actual:31.6,mom:-3.7,vs_target:-6.4},{metric:"Y-M1 retention",actual:88.5,mom:0.1,vs_target:-1.5},{metric:"M-M3 retention",actual:36.7,mom:1.5,vs_target:-1.3}],
-    acquisition_checkout:[{metric:"US checkout",actual:46.3,wow:0.8,vs_target:-3.8},{metric:"RoW checkout",actual:27.5,wow:-0.6,vs_target:-7.5},{metric:"Day 0 login",actual:84.2,wow:-0.7,vs_target:-10.8},{metric:"Renewal ratio",actual:82.4,wow:0.7,vs_target:-1.6}],
-    engagement_transformation:[{metric:"Engagement",actual:61.8,wow:0.1,vs_target:-3.2},{metric:"Activation",actual:79.1,wow:1.0,vs_target:-10.9},{metric:"Transformation",actual:46.2,wow:0.0,vs_target:-3.8},{metric:"MAU/MAS",actual:37.7,wow:-0.3,vs_target:-2.3},{metric:"CS Ticket/MAS",actual:0.9,wow:-0.5,vs_target:-0.1}],
+  product:{platform_revenue_mtd:null,engagement:61.8,engagement_wow:0.1,engagement_wow_c:null,engagement_target_delta:-3.2,engagement_target_c:null,engagement_yoy:-1.2,engagement_yoy_c:null,activation:79.1,activation_wow:1.0,activation_wow_c:"red",activation_target_delta:-10.9,activation_target_c:null,activation_yoy:11.9,activation_yoy_c:null,
+    revenue_refund_retention:[{metric:"Platform Revenue MTD",actual:null,mom:null,mom_c:null,vs_target:null,vs_target_c:null,yoy:null,yoy_c:null},{metric:"Y-MVM Refund*",actual:11.5,mom:-1.5,mom_c:"green",vs_target:1.5,vs_target_c:"red",yoy:-5.2,yoy_c:"green"},{metric:"Y-M13 retention*",actual:33.0,mom:-3.8,mom_c:null,vs_target:-5.0,vs_target_c:null,yoy:-3.7,yoy_c:null},{metric:"Y-M1 retention*",actual:90.1,mom:1.6,mom_c:null,vs_target:-1.9,vs_target_c:null,yoy:3.1,yoy_c:null},{metric:"M-M3 retention*",actual:32.0,mom:-4.7,mom_c:null,vs_target:-4.0,vs_target_c:null,yoy:-3.3,yoy_c:null}],
+    checkout_engagement_transformation:[{metric:"US checkout",actual:46.3,wow:0.8,wow_c:null,vs_target:-3.8,vs_target_c:null,yoy:-0.1,yoy_c:"amber"},{metric:"RoW checkout",actual:27.5,wow:-0.6,wow_c:"amber",vs_target:-2.5,vs_target_c:null,yoy:1.9,yoy_c:null},{metric:"Day 0 login",actual:84.2,wow:-0.7,wow_c:"amber",vs_target:-10.8,vs_target_c:null,yoy:0.1,yoy_c:null},{metric:"Renewal ratio",actual:82.4,wow:0.7,wow_c:null,vs_target:-1.6,vs_target_c:null,yoy:-0.2,yoy_c:"amber"},{metric:"Transformation",actual:46.2,wow:0.0,wow_c:"green",vs_target:-3.8,vs_target_c:null,yoy:1.4,yoy_c:null},{metric:"MAU/MAS",actual:37.7,wow:-1.9,wow_c:null,vs_target:-2.0,vs_target_c:null,yoy:-9.0,yoy_c:null}],
     initiatives:[{name:"Pathways MVP on Platform",status:"green",note:"E2E testing starts May 6",timeline:"~15 May Live",obj:"Acquisition/Retention"},{name:"Masterclass on Platform",status:"green",note:"Social login, video on platform",timeline:"End May",obj:"Acquisition/Retention"},{name:"Shorts 2.0/Vertical Content",status:"green",note:"MVP live (3.5 → 4.6)",timeline:"Throughout May",obj:"Retention"},{name:"Eve Memory",status:"green",note:"Personalization + dynamic prompts",timeline:"Mid May",obj:"Retention"},{name:"New You/Profile Page",status:"amber",note:"Definition stage",timeline:"End May",obj:"Retention"},{name:"Journal",status:"black",note:"TBD — scoping",timeline:"May",obj:"Retention"},{name:"Checkout — PayPal BNPL",status:"green",note:"Manifesting Mastery, API upgrade, RoW adaptive pricing",timeline:"14 May",obj:"Acquisition"}]},
 
   action_items:{
@@ -253,26 +252,21 @@ const mkBlankSeed = () => {
     events:{campaign_name:"",tickets_sold:null,tickets_target:null,tickets_remaining:null,revenue_actual:null,revenue_target:null,refund_rate:null,refund_dollars:null,gross_revenue:null,velocity_7d:null,velocity_per_day:null,velocity_required:null,yoy_paid_pct:null,yoy_paid_actual:null,yoy_paid_ly:null,yoy_revenue_pct:null,yoy_revenue_actual:null,yoy_revenue_ly:null,ads_status:"",ads_roas:null,valid_tickets:null,paid_tickets:null,comped_tickets:null,webinar_closes:null,webinar_revenue:null,refund_forecast_initial:null,refund_forecast_worst:null,refund_worst_dollars:null,refund_worst_delta:null,refund_2025_actual:null,speakers_confirmed:null,speakers_negotiating:[],venue_status:""},
     states:{mtd_sales:null,mtd_target:null,bottles_sold:null,bottles_target:null,revenue_per_session:null,units_left:null,days_to_expiry:null,sell_through_required:null,sell_through_actual:null,write_off_projection:null,roas_7d:null,roas_30d:null,roas_90d:null,cac_payback:null,cpl:null,repeat_rate:null,time_to_2nd:null,aov:null,paid_pct:null,organic_pct:null,notes:""},
     product:{
-      platform_revenue_mtd:null,engagement:null,engagement_wow:null,engagement_target_delta:null,activation:null,activation_wow:null,activation_target_delta:null,
+      platform_revenue_mtd:null,engagement:null,engagement_wow:null,engagement_wow_c:null,engagement_target_delta:null,engagement_target_c:null,engagement_yoy:null,engagement_yoy_c:null,activation:null,activation_wow:null,activation_wow_c:null,activation_target_delta:null,activation_target_c:null,activation_yoy:null,activation_yoy_c:null,
       revenue_refund_retention:[
-        {metric:"Platform Revenue MTD",actual:null,mom:null,vs_target:null},
-        {metric:"Y-MVM Refund",actual:null,mom:null,vs_target:null},
-        {metric:"Y-M13 retention",actual:null,mom:null,vs_target:null},
-        {metric:"Y-M1 retention",actual:null,mom:null,vs_target:null},
-        {metric:"M-M3 retention",actual:null,mom:null,vs_target:null}
+        {metric:"Platform Revenue MTD",actual:null,mom:null,mom_c:null,vs_target:null,vs_target_c:null,yoy:null,yoy_c:null},
+        {metric:"Y-MVM Refund*",actual:null,mom:null,mom_c:null,vs_target:null,vs_target_c:null,yoy:null,yoy_c:null},
+        {metric:"Y-M13 retention*",actual:null,mom:null,mom_c:null,vs_target:null,vs_target_c:null,yoy:null,yoy_c:null},
+        {metric:"Y-M1 retention*",actual:null,mom:null,mom_c:null,vs_target:null,vs_target_c:null,yoy:null,yoy_c:null},
+        {metric:"M-M3 retention*",actual:null,mom:null,mom_c:null,vs_target:null,vs_target_c:null,yoy:null,yoy_c:null}
       ],
-      acquisition_checkout:[
-        {metric:"US checkout",actual:null,wow:null,vs_target:null},
-        {metric:"RoW checkout",actual:null,wow:null,vs_target:null},
-        {metric:"Day 0 login",actual:null,wow:null,vs_target:null},
-        {metric:"Renewal ratio",actual:null,wow:null,vs_target:null}
-      ],
-      engagement_transformation:[
-        {metric:"Engagement",actual:null,wow:null,vs_target:null},
-        {metric:"Activation",actual:null,wow:null,vs_target:null},
-        {metric:"Transformation",actual:null,wow:null,vs_target:null},
-        {metric:"MAU/MAS",actual:null,wow:null,vs_target:null},
-        {metric:"CS Ticket/MAS",actual:null,wow:null,vs_target:null}
+      checkout_engagement_transformation:[
+        {metric:"US checkout",actual:null,wow:null,wow_c:null,vs_target:null,vs_target_c:null,yoy:null,yoy_c:null},
+        {metric:"RoW checkout",actual:null,wow:null,wow_c:null,vs_target:null,vs_target_c:null,yoy:null,yoy_c:null},
+        {metric:"Day 0 login",actual:null,wow:null,wow_c:null,vs_target:null,vs_target_c:null,yoy:null,yoy_c:null},
+        {metric:"Renewal ratio",actual:null,wow:null,wow_c:null,vs_target:null,vs_target_c:null,yoy:null,yoy_c:null},
+        {metric:"Transformation",actual:null,wow:null,wow_c:null,vs_target:null,vs_target_c:null,yoy:null,yoy_c:null},
+        {metric:"MAU/MAS",actual:null,wow:null,wow_c:null,vs_target:null,vs_target_c:null,yoy:null,yoy_c:null}
       ],
       initiatives:[]
     },
@@ -323,6 +317,11 @@ const Dt = ({ delta:d, suffix="%" }) => {
   const up=d>0,flat=Math.abs(d)<0.05,col=flat?"var(--muted)":up?"var(--green)":"var(--red)";
   const Icon=flat?null:up?TrendingUp:TrendingDown;
   return <span style={{display:"inline-flex",alignItems:"center",gap:"3px",fontSize:"12px",fontWeight:500,color:col,fontFamily:"'JetBrains Mono',monospace"}}>{Icon&&<Icon size={11}/>}{up&&!flat?"+":""}{d.toFixed(1)}{suffix}</span>;
+};
+const DotBadge = ({ val, c }) => {
+  if(val===null||val===undefined||isNaN(val)) return <span style={{color:"var(--faint)"}}>—</span>;
+  const dotColor=c==="green"?"var(--green)":c==="red"?"var(--red)":c==="amber"?"var(--amber)":val>0?"var(--green)":val<0?"var(--red)":"var(--muted)";
+  return <span style={{display:"inline-flex",alignItems:"center",gap:"3px",fontSize:"12px",fontFamily:"'JetBrains Mono',monospace",color:"var(--text)"}}>{val>0?"+":""}{val.toFixed(1)}pp <span style={{color:dotColor,fontSize:"10px"}}>●</span></span>;
 };
 const NI = ({ value, onChange, prefix="", suffix="" }) => (
   <span style={{display:"inline-flex",alignItems:"center",gap:"4px"}}>
@@ -764,37 +763,126 @@ const Product = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment 
   const p=data.product; const set=(k,v)=>onChange(["product",k],v);
   const sColors={green:"var(--green)",amber:"var(--amber)",red:"var(--red)",black:"var(--faint)"};
   const sLabels={green:"On Track",amber:"At Risk",red:"Off Track",black:"TBD"};
+  const colPicker=(val,onChangeFn)=><select value={val??"auto"} onChange={e=>onChangeFn(e.target.value==="auto"?null:e.target.value)} style={{width:"52px",fontSize:"10px",padding:"2px",background:"var(--input-bg)",color:"var(--text)",border:"1px solid var(--input-border)",borderRadius:"4px"}}><option value="auto">auto</option><option value="green">🟢</option><option value="amber">🟡</option><option value="red">🔴</option></select>;
+  const thStyle={padding:"6px 6px",textAlign:"right",fontSize:"10px",fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",color:"var(--muted)"};
+  const thStyleL={...thStyle,textAlign:"left",padding:"6px 8px"};
   return <div className="fade-up">
     <SHead owner="Dario" title="Product" cadence="Weekly · Platform metrics + roadmap aligned with marketing" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
-    <div className="rg-3" style={{gap:"12px",marginBottom:"16px"}}>
-      {[{lbl:"★ Platform Revenue MTD",main:editing?<NI value={p.platform_revenue_mtd} onChange={v=>set("platform_revenue_mtd",v)} prefix="$"/>:<div className="font-display" style={{fontSize:"32px",lineHeight:1}}>{p.platform_revenue_mtd===null?<span style={{color:"var(--faint)"}}>TBD</span>:fmtM(p.platform_revenue_mtd)}</div>,sub:null},{lbl:"★ Engagement",main:editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><NI value={p.engagement} onChange={v=>set("engagement",v)} suffix="%"/><div style={{fontSize:"12px",color:"var(--muted)"}}>WoW pp: <NI value={p.engagement_wow} onChange={v=>set("engagement_wow",v)}/></div></div>:<div className="font-display" style={{fontSize:"32px",lineHeight:1}}>{fmtPct(p.engagement)}</div>,sub:<div style={{fontSize:"12px",color:"var(--muted)",display:"flex",gap:"6px"}}><Dt delta={p.engagement_wow} suffix="pp"/> WoW · <Dt delta={p.engagement_target_delta} suffix="pp"/> vs Q2</div>},{lbl:"★ Activation",main:editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><NI value={p.activation} onChange={v=>set("activation",v)} suffix="%"/><div style={{fontSize:"12px",color:"var(--muted)"}}>WoW pp: <NI value={p.activation_wow} onChange={v=>set("activation_wow",v)}/></div></div>:<div className="font-display" style={{fontSize:"32px",lineHeight:1}}>{fmtPct(p.activation)}</div>,sub:<div style={{fontSize:"12px",color:"var(--muted)",display:"flex",gap:"6px"}}><Dt delta={p.activation_wow} suffix="pp"/> WoW · <Dt delta={p.activation_target_delta} suffix="pp"/> vs Q2</div>}].map((h,i)=>(
-        <div key={i} style={{background:"linear-gradient(145deg,var(--card2),rgba(123,95,245,0.08))",border:"1px solid rgba(123,95,245,0.15)",borderRadius:"14px",padding:"20px"}}>
-          <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px"}}>{h.lbl}</div>
-          <div style={{marginBottom:"8px"}}>{h.main}</div>{h.sub}
+    {/* HERO METRICS banner */}
+    <div style={{background:"rgba(123,95,245,0.1)",border:"1px solid rgba(123,95,245,0.25)",borderRadius:"14px",padding:"20px 24px",marginBottom:"16px"}}>
+      <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:"var(--purple2)",marginBottom:"16px"}}>★ Hero Metrics</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"24px",alignItems:"start"}}>
+        <div>
+          <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"10px"}}>★ Platform Revenue MTD</div>
+          <div className="font-display" style={{fontSize:"28px",lineHeight:1,marginBottom:"6px"}}>{editing?<NI value={p.platform_revenue_mtd} onChange={v=>set("platform_revenue_mtd",v)} prefix="$"/>:(p.platform_revenue_mtd===null?<span style={{color:"var(--faint)"}}>TBC</span>:fmtM(p.platform_revenue_mtd))}</div>
         </div>
-      ))}
+        <div>
+          <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"10px"}}>★ Engagement</div>
+          <div className="font-display" style={{fontSize:"28px",lineHeight:1,marginBottom:"6px"}}>{editing?<NI value={p.engagement} onChange={v=>set("engagement",v)} suffix="%"/>:fmtPct(p.engagement)}</div>
+          {editing
+            ?<div style={{display:"flex",flexDirection:"column",gap:"5px"}}>
+              <div style={{display:"flex",gap:"4px",alignItems:"center",fontSize:"11px",color:"var(--muted)"}}><span style={{width:"44px"}}>WoW:</span><NI value={p.engagement_wow} onChange={v=>set("engagement_wow",v)}/>{colPicker(p.engagement_wow_c,v=>set("engagement_wow_c",v))}</div>
+              <div style={{display:"flex",gap:"4px",alignItems:"center",fontSize:"11px",color:"var(--muted)"}}><span style={{width:"44px"}}>vs Q2:</span><NI value={p.engagement_target_delta} onChange={v=>set("engagement_target_delta",v)}/>{colPicker(p.engagement_target_c,v=>set("engagement_target_c",v))}</div>
+              <div style={{display:"flex",gap:"4px",alignItems:"center",fontSize:"11px",color:"var(--muted)"}}><span style={{width:"44px"}}>YoY:</span><NI value={p.engagement_yoy} onChange={v=>set("engagement_yoy",v)}/>{colPicker(p.engagement_yoy_c,v=>set("engagement_yoy_c",v))}</div>
+            </div>
+            :<div style={{fontSize:"12px",color:"var(--muted)",display:"flex",flexWrap:"wrap",alignItems:"center",gap:"5px"}}>
+              <DotBadge val={p.engagement_wow} c={p.engagement_wow_c}/><span style={{color:"var(--faint)"}}>WoW</span>
+              <span style={{color:"var(--faint)"}}>/</span>
+              <DotBadge val={p.engagement_target_delta} c={p.engagement_target_c}/><span style={{color:"var(--faint)"}}>vs. Q2 target</span>
+              <span style={{color:"var(--faint)"}}>/</span>
+              <DotBadge val={p.engagement_yoy} c={p.engagement_yoy_c}/><span style={{color:"var(--faint)"}}>YoY</span>
+            </div>
+          }
+        </div>
+        <div>
+          <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"10px"}}>★ Activation</div>
+          <div className="font-display" style={{fontSize:"28px",lineHeight:1,marginBottom:"6px"}}>{editing?<NI value={p.activation} onChange={v=>set("activation",v)} suffix="%"/>:fmtPct(p.activation)}</div>
+          {editing
+            ?<div style={{display:"flex",flexDirection:"column",gap:"5px"}}>
+              <div style={{display:"flex",gap:"4px",alignItems:"center",fontSize:"11px",color:"var(--muted)"}}><span style={{width:"44px"}}>WoW:</span><NI value={p.activation_wow} onChange={v=>set("activation_wow",v)}/>{colPicker(p.activation_wow_c,v=>set("activation_wow_c",v))}</div>
+              <div style={{display:"flex",gap:"4px",alignItems:"center",fontSize:"11px",color:"var(--muted)"}}><span style={{width:"44px"}}>vs Q2:</span><NI value={p.activation_target_delta} onChange={v=>set("activation_target_delta",v)}/>{colPicker(p.activation_target_c,v=>set("activation_target_c",v))}</div>
+              <div style={{display:"flex",gap:"4px",alignItems:"center",fontSize:"11px",color:"var(--muted)"}}><span style={{width:"44px"}}>YoY:</span><NI value={p.activation_yoy} onChange={v=>set("activation_yoy",v)}/>{colPicker(p.activation_yoy_c,v=>set("activation_yoy_c",v))}</div>
+            </div>
+            :<div style={{fontSize:"12px",color:"var(--muted)",display:"flex",flexWrap:"wrap",alignItems:"center",gap:"5px"}}>
+              <DotBadge val={p.activation_wow} c={p.activation_wow_c}/><span style={{color:"var(--faint)"}}>WoW</span>
+              <span style={{color:"var(--faint)"}}>/</span>
+              <DotBadge val={p.activation_target_delta} c={p.activation_target_c}/><span style={{color:"var(--faint)"}}>vs. Q2 target</span>
+              <span style={{color:"var(--faint)"}}>/</span>
+              <DotBadge val={p.activation_yoy} c={p.activation_yoy_c}/><span style={{color:"var(--faint)"}}>YoY</span>
+            </div>
+          }
+        </div>
+      </div>
     </div>
-    <div className="rg-3" style={{gap:"12px",marginBottom:"16px"}}>
-      {[["Revenue, Refund & Retention","revenue_refund_retention","Actual % | MoM pp / vs Q2 pp"],["Acquisition / Checkout","acquisition_checkout","Actual % | WoW pp / vs Q2 pp"],["Engagement & Transformation","engagement_transformation","Actual % | WoW pp / vs Q2 pp"]].map(([title,key,note])=>(
-        <Card key={key}><CardHead title={title} sub={note}/><div style={{padding:"12px"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:"12px"}}><tbody>
-          {p[key].map((r,i)=>{ const k1=r.mom!==undefined?"mom":"wow"; return <tr key={i} style={{borderBottom:"1px solid var(--border)"}} className="ai-row">
-            <td style={{padding:"7px 8px",color:"var(--muted)",fontSize:"12px"}}>{r.metric}</td>
-            <td style={{padding:"7px 6px",textAlign:"right",fontFamily:"'JetBrains Mono',monospace"}}>
-              {editing?<NI value={r.actual} onChange={v=>{const n=[...p[key]];n[i]={...n[i],actual:v};set(key,n);}} suffix="%"/>:(r.actual===null?<span style={{color:"var(--faint)"}}>TBD</span>:fmtPct(r.actual))}
-            </td>
-            <td style={{padding:"7px 6px",textAlign:"right"}}>
-              {editing
-                ?<div style={{display:"flex",gap:"4px",alignItems:"center",justifyContent:"flex-end"}}>
-                  <NI value={r[k1]} onChange={v=>{const n=[...p[key]];n[i]={...n[i],[k1]:v};set(key,n);}}/>
-                  <span style={{color:"var(--faint)",fontSize:"10px"}}>/</span>
-                  <NI value={r.vs_target} onChange={v=>{const n=[...p[key]];n[i]={...n[i],vs_target:v};set(key,n);}}/>
-                </div>
-                :<span style={{display:"flex",alignItems:"center",gap:"3px",justifyContent:"flex-end"}}><Dt delta={r[k1]} suffix="pp"/><span style={{color:"var(--faint)"}}>/</span><Dt delta={r.vs_target} suffix="pp"/></span>}
-            </td>
-          </tr>; })}
-        </tbody></table></div></Card>
-      ))}
+    {/* Two-column metric tables */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"16px"}}>
+      {/* Left: Revenue – Refund – Retention */}
+      <Card>
+        <CardHead title="Revenue · Refund · Retention"/>
+        <div style={{padding:"12px"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:"12px"}}>
+            <thead><tr style={{borderBottom:"2px solid var(--border)"}}>
+              <th style={thStyleL}>Metric</th>
+              <th style={thStyle}>Actual</th>
+              <th style={thStyle}>MoM</th>
+              <th style={thStyle}>vs. Q2</th>
+              <th style={thStyle}>YoY</th>
+            </tr></thead>
+            <tbody>{(p.revenue_refund_retention||[]).map((r,i)=>(
+              <tr key={i} style={{borderBottom:"1px solid var(--border)"}} className="ai-row">
+                <td style={{padding:"7px 8px",color:"var(--muted)",fontSize:"12px"}}>{r.metric}</td>
+                <td style={{padding:"7px 6px",textAlign:"right",fontFamily:"'JetBrains Mono',monospace"}}>
+                  {editing?<NI value={r.actual} onChange={v=>{const n=[...p.revenue_refund_retention];n[i]={...n[i],actual:v};set("revenue_refund_retention",n);}} suffix="%"/>:(r.actual===null?<span style={{color:"var(--faint)"}}>TBD</span>:fmtPct(r.actual))}
+                </td>
+                <td style={{padding:"7px 6px",textAlign:"right"}}>
+                  {editing?<div style={{display:"flex",gap:"2px",alignItems:"center",justifyContent:"flex-end"}}><NI value={r.mom} onChange={v=>{const n=[...p.revenue_refund_retention];n[i]={...n[i],mom:v};set("revenue_refund_retention",n);}}/>{colPicker(r.mom_c,v=>{const n=[...p.revenue_refund_retention];n[i]={...n[i],mom_c:v};set("revenue_refund_retention",n);})}</div>:<DotBadge val={r.mom} c={r.mom_c}/>}
+                </td>
+                <td style={{padding:"7px 6px",textAlign:"right"}}>
+                  {editing?<div style={{display:"flex",gap:"2px",alignItems:"center",justifyContent:"flex-end"}}><NI value={r.vs_target} onChange={v=>{const n=[...p.revenue_refund_retention];n[i]={...n[i],vs_target:v};set("revenue_refund_retention",n);}}/>{colPicker(r.vs_target_c,v=>{const n=[...p.revenue_refund_retention];n[i]={...n[i],vs_target_c:v};set("revenue_refund_retention",n);})}</div>:<DotBadge val={r.vs_target} c={r.vs_target_c}/>}
+                </td>
+                <td style={{padding:"7px 6px",textAlign:"right"}}>
+                  {editing?<div style={{display:"flex",gap:"2px",alignItems:"center",justifyContent:"flex-end"}}><NI value={r.yoy} onChange={v=>{const n=[...p.revenue_refund_retention];n[i]={...n[i],yoy:v};set("revenue_refund_retention",n);}}/>{colPicker(r.yoy_c,v=>{const n=[...p.revenue_refund_retention];n[i]={...n[i],yoy_c:v};set("revenue_refund_retention",n);})}</div>:<DotBadge val={r.yoy} c={r.yoy_c}/>}
+                </td>
+              </tr>
+            ))}</tbody>
+          </table>
+          <p style={{fontSize:"11px",color:"var(--muted)",fontStyle:"italic",padding:"8px 0 0"}}>* Retention and refund data to be updated after day 21</p>
+        </div>
+      </Card>
+      {/* Right: Checkout – Engagement – Transformation */}
+      <Card>
+        <CardHead title="Checkout · Engagement · Transformation"/>
+        <div style={{padding:"12px"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:"12px"}}>
+            <thead><tr style={{borderBottom:"2px solid var(--border)"}}>
+              <th style={thStyleL}>Metric</th>
+              <th style={thStyle}>Actual</th>
+              <th style={thStyle}>WoW</th>
+              <th style={thStyle}>vs. Q2</th>
+              <th style={thStyle}>YoY</th>
+            </tr></thead>
+            <tbody>{(p.checkout_engagement_transformation||[]).map((r,i)=>(
+              <tr key={i} style={{borderBottom:"1px solid var(--border)"}} className="ai-row">
+                <td style={{padding:"7px 8px",color:"var(--muted)",fontSize:"12px"}}>{r.metric}</td>
+                <td style={{padding:"7px 6px",textAlign:"right",fontFamily:"'JetBrains Mono',monospace"}}>
+                  {editing?<NI value={r.actual} onChange={v=>{const n=[...p.checkout_engagement_transformation];n[i]={...n[i],actual:v};set("checkout_engagement_transformation",n);}} suffix="%"/>:(r.actual===null?<span style={{color:"var(--faint)"}}>TBD</span>:fmtPct(r.actual))}
+                </td>
+                <td style={{padding:"7px 6px",textAlign:"right"}}>
+                  {editing?<div style={{display:"flex",gap:"2px",alignItems:"center",justifyContent:"flex-end"}}><NI value={r.wow} onChange={v=>{const n=[...p.checkout_engagement_transformation];n[i]={...n[i],wow:v};set("checkout_engagement_transformation",n);}}/>{colPicker(r.wow_c,v=>{const n=[...p.checkout_engagement_transformation];n[i]={...n[i],wow_c:v};set("checkout_engagement_transformation",n);})}</div>:<DotBadge val={r.wow} c={r.wow_c}/>}
+                </td>
+                <td style={{padding:"7px 6px",textAlign:"right"}}>
+                  {editing?<div style={{display:"flex",gap:"2px",alignItems:"center",justifyContent:"flex-end"}}><NI value={r.vs_target} onChange={v=>{const n=[...p.checkout_engagement_transformation];n[i]={...n[i],vs_target:v};set("checkout_engagement_transformation",n);}}/>{colPicker(r.vs_target_c,v=>{const n=[...p.checkout_engagement_transformation];n[i]={...n[i],vs_target_c:v};set("checkout_engagement_transformation",n);})}</div>:<DotBadge val={r.vs_target} c={r.vs_target_c}/>}
+                </td>
+                <td style={{padding:"7px 6px",textAlign:"right"}}>
+                  {editing?<div style={{display:"flex",gap:"2px",alignItems:"center",justifyContent:"flex-end"}}><NI value={r.yoy} onChange={v=>{const n=[...p.checkout_engagement_transformation];n[i]={...n[i],yoy:v};set("checkout_engagement_transformation",n);}}/>{colPicker(r.yoy_c,v=>{const n=[...p.checkout_engagement_transformation];n[i]={...n[i],yoy_c:v};set("checkout_engagement_transformation",n);})}</div>:<DotBadge val={r.yoy} c={r.yoy_c}/>}
+                </td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </Card>
     </div>
+    {/* Initiatives table */}
     <Card><CardHead title="Key Product Initiatives" action={editing&&<Btn variant="ghost" size="sm" onClick={()=>set("initiatives",[...p.initiatives,{name:"",status:"amber",note:"",timeline:"",obj:""}])}><Plus size={12}/>Add</Btn>}/>
       <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
         <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["#","Initiative","Status","Note","Timeline","Objective"].map(h=><th key={h} style={{padding:"12px 14px",textAlign:h==="#"||h==="Initiative"||h==="Note"?"left":"center",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)"}}>{h}</th>)}</tr></thead>
