@@ -16,7 +16,11 @@ const EnvSchema = z.object({
   AUTH_TRUST_HOST: z
     .string()
     .optional()
-    .transform((v) => v === "true" || v === "1"),
+    .transform((v) => {
+      if (!v) return false;
+      const s = v.trim().toLowerCase();
+      return s === "true" || s === "1" || s === "yes";
+    }),
 
   // Domain restriction for Google SSO.
   AUTH_ALLOWED_EMAIL_DOMAIN: RequiredString.default("mindvalley.com"),
