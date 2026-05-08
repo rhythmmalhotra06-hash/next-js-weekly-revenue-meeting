@@ -104,7 +104,7 @@ const lsDel = (k) => { try { localStorage.removeItem(k); } catch {} };
 const apiGet = async (path) => { try { const r=await fetch(path); return r.ok?r.json():null; } catch { return null; } };
 const apiPost = async (path,body) => { try { const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); return r.ok?r.json():null; } catch { return null; } };
 const apiPut = async (path,body) => { try { await fetch(path,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); } catch {} };
-const apiDel = async (path) => { try { await fetch(path,{method:"DELETE"}); } catch {} };
+const apiDel = async (path) => { const r=await fetch(path,{method:"DELETE"}); if(!r.ok) throw new Error(await r.text()); return r; };
 
 const emptyPageCfg = () => ({ header_image:null, header_text:"", page_notes:"", page_notes_2:"" });
 
@@ -1311,7 +1311,7 @@ export default function App() {
     showFlash();
   };
   const loadMeeting=async(id)=>{ const m=await apiGet(`/api/meetings/${id}`); if(m&&!m.error){setData(hydrate(m));setViewingId(id);setShowHistory(false);setActive("company_health");} };
-  const deleteMeeting=async(id)=>{ await apiDel(`/api/meetings/${id}`); const allMeetings=await apiGet('/api/meetings'); if(Array.isArray(allMeetings)) setMeetings(allMeetings); };
+  const deleteMeeting=async(id)=>{ try { await apiDel(`/api/meetings/${id}`); const allMeetings=await apiGet('/api/meetings'); if(Array.isArray(allMeetings)) setMeetings(allMeetings); } catch(e){ alert(`Failed to delete meeting: ${e.message}`); } };
   const updateMeetingDate=async(id,newDate)=>{ const m=await apiGet(`/api/meetings/${id}`); if(m&&!m.error) await apiPut(`/api/meetings/${id}`,{data:{...m,meeting_date:newDate,meeting_label:`Week of ${fmtDate(newDate)}`},date:newDate}); const allMeetings=await apiGet('/api/meetings'); if(Array.isArray(allMeetings)) setMeetings(allMeetings); };
   const exportData=()=>{ const b=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=`mv_performance_${data.meeting_date}.json`; a.click(); URL.revokeObjectURL(u); };
   const resetDraft=async()=>{ if(!confirm("Reset the current draft to a blank week?")) return; const f=mkBlankSeed(); if(draftRecordId) apiPut(`/api/meetings/${draftRecordId}`,{data:f}); lsDel('mv2:draft'); setData(f); };
