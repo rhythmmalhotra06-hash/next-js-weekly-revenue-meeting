@@ -6,6 +6,9 @@ import { env } from "@/lib/env";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  // Trust X-Forwarded-Host on non-Vercel deploys (Cloud Run, Railway, Kessel).
+  // Driven by AUTH_TRUST_HOST env var, parsed to boolean in lib/env.ts.
+  trustHost: env.AUTH_TRUST_HOST,
   providers: [
     Google({
       clientId: env.GOOGLE_CLIENT_ID,
