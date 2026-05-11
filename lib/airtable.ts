@@ -71,9 +71,17 @@ function toAirtableFields(data: any, status?: string): Record<string, unknown> {
   }
 
   // JSON section blobs
+  // bu_performance, bu_total, bu_insights are bundled together for atomic saves
+  if (data.bu_performance !== undefined || data.bu_total !== undefined || data.bu_insights !== undefined) {
+    fields["BU Performance JSON"] = JSON.stringify({
+      rows: data.bu_performance ?? null,
+      total: data.bu_total ?? null,
+      insights: data.bu_insights ?? null,
+    });
+  }
+
   const jsonSections: [string, string][] = [
     ["company_health", "Company Health JSON"],
-    ["bu_performance", "BU Performance JSON"],
     ["membership", "Membership JSON"],
     ["pathways", "Pathways JSON"],
     ["masteries", "Masteries JSON"],
@@ -147,7 +155,6 @@ function fromAirtableRecord(record: any): any {
   // Conditionally assign sections so undefined fields don't clobber mkSeed defaults
   const sections: [string, string][] = [
     ["company_health", "Company Health JSON"],
-    ["bu_performance", "BU Performance JSON"],
     ["membership", "Membership JSON"],
     ["pathways", "Pathways JSON"],
     ["masteries", "Masteries JSON"],
@@ -158,6 +165,17 @@ function fromAirtableRecord(record: any): any {
   for (const [key, field] of sections) {
     const v = jsonSection(f[field]);
     if (v !== undefined) result[key] = v;
+  }
+
+  const buRaw = jsonSection(f["BU Performance JSON"]);
+  if (buRaw !== undefined) {
+    if (Array.isArray(buRaw)) {
+      result.bu_performance = buRaw;
+    } else {
+      if (buRaw.rows !== undefined)     result.bu_performance = buRaw.rows;
+      if (buRaw.total !== undefined)    result.bu_total = buRaw.total;
+      if (buRaw.insights !== undefined) result.bu_insights = buRaw.insights;
+    }
   }
 
   const notes = jsonSection(f["Meeting Notes"]);
