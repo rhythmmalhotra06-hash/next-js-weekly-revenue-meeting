@@ -1186,14 +1186,9 @@ const formatISOToDue=(iso)=>{
   return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
 };
 
-const ItemRow=({ it, editing, updateItem, confirmDel, setConfirmDel, deleteItem, itemIndex, moveItem, totalItems })=>{
+const ItemRow=({ it, editing, updateItem, confirmDel, setConfirmDel, deleteItem })=>{
   const ss=statusStyle(it.status); const ps=prioStyle(it.priority);
-  const num=String(itemIndex+1).padStart(2,"0");
-  const nc=it.priority==="Critical"?"var(--red)":it.priority==="High"?"var(--amber)":"var(--muted)";
   return <tr className="ai-row" style={{borderBottom:"1px solid var(--border)",borderLeft:it.flagged?"3px solid var(--red)":"3px solid transparent"}}>
-    <td style={{padding:"12px 14px",fontFamily:"ui-monospace,'SF Mono','Roboto Mono',Menlo,Consolas,monospace",fontSize:"12px",fontWeight:700,color:nc,width:"36px"}}>
-      {editing?<input type="number" min={1} max={totalItems} value={itemIndex+1} onChange={e=>{const v=parseInt(e.target.value,10);if(!isNaN(v))moveItem(it.id,v-1);}} style={{width:"32px",textAlign:"center",background:"transparent",border:"none",padding:"0",fontFamily:"inherit",fontSize:"12px",fontWeight:700,color:nc,MozAppearance:"textfield"}}/>:num}
-    </td>
     <td style={{padding:"12px 14px",minWidth:"220px"}}>
       {editing
         ? <><div><input value={it.title} onChange={e=>updateItem(it.id,"title",e.target.value)} style={{fontWeight:600,fontSize:"13px",width:"100%",background:"transparent",border:"none",borderBottom:"1px solid transparent",borderRadius:"0",padding:"0 0 2px",color:"var(--text)"}} onFocus={e=>e.target.style.borderBottomColor="var(--purple)"} onBlur={e=>e.target.style.borderBottomColor="transparent"}/></div><div><input value={it.note} onChange={e=>updateItem(it.id,"note",e.target.value)} style={{fontSize:"11.5px",color:"var(--muted)",width:"100%",background:"transparent",border:"none",borderBottom:"1px solid transparent",borderRadius:"0",padding:"0 0 1px"}} onFocus={e=>e.target.style.borderBottomColor="var(--purple)"} onBlur={e=>e.target.style.borderBottomColor="transparent"}/></div></>
@@ -1228,7 +1223,6 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
   const setAI=(key,val)=>onChange(["action_items",key],val);
   const updateItem=(id,k,v)=>setAI("items",ai.items.map(it=>it.id===id?{...it,[k]:v}:it));
   const deleteItem=(id)=>{ setAI("items",ai.items.filter(it=>it.id!==id)); setConfirmDel(null); };
-  const moveItem=(id,newPos)=>{ const arr=[...ai.items]; const from=arr.findIndex(x=>x.id===id); if(from<0) return; const clamped=Math.max(0,Math.min(newPos,arr.length-1)); const [item]=arr.splice(from,1); arr.splice(clamped,0,item); setAI("items",arr); };
   const addItem=(priority)=>{ const nextId=(ai.next_id||100); setAI("items",[...ai.items,{id:nextId,priority,title:"New action item",note:"Add details here",owner:"—",supporting:"—",due:"TBD",okr:"Execution Cadence",status:"Open",flagged:false}]); onChange(["action_items","next_id"],nextId+1); };
 
   const filtered=ai.items.filter(it=>{
@@ -1306,8 +1300,8 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
         <div style={{fontSize:"16px",fontWeight:600,color:prio==="Critical"?"var(--red)":prio==="High"?"var(--amber)":"var(--text)",marginBottom:"12px"}}>{emoji} {label}</div>
         {rows.length>0
           ? <Card><div style={{overflowX:"auto",overflowY:"auto",maxHeight:"560px"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
-              <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["#","Action Item","Owner","Due","Priority","Status",""].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
-              <tbody>{rows.map(it=><ItemRow key={it.id} it={it} editing={editing} updateItem={updateItem} confirmDel={confirmDel} setConfirmDel={setConfirmDel} deleteItem={deleteItem} itemIndex={ai.items.findIndex(x=>x.id===it.id)} moveItem={moveItem} totalItems={ai.items.length}/>)}</tbody>
+              <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["Action Item","Owner","Due","Priority","Status",""].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
+              <tbody>{rows.map(it=><ItemRow key={it.id} it={it} editing={editing} updateItem={updateItem} confirmDel={confirmDel} setConfirmDel={setConfirmDel} deleteItem={deleteItem}/>)}</tbody>
             </table></div></Card>
           : <div style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic",padding:"12px 0"}}>No {prio.toLowerCase()} items match the current filter.</div>}
         {editing&&<button onClick={()=>addItem(prio)} style={{marginTop:"8px",padding:"6px 14px",background:"transparent",border:`1.5px dashed ${prio==="Critical"?"var(--red)":prio==="High"?"var(--amber)":"var(--border)"}`,borderRadius:"7px",color:prio==="Critical"?"var(--red)":prio==="High"?"var(--amber)":"var(--muted)",fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:"6px"}}><Plus size={12}/>Add {prio} item</button>}
