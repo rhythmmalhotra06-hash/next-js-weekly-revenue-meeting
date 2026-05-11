@@ -224,7 +224,7 @@ const mkSeed = () => ({
 
   events:{campaign_name:"MVU Estonia In-Person 2026",tickets_sold:923,tickets_target:1400,tickets_remaining:477,revenue_actual:1280000,revenue_target:2000000,refund_rate:16.52,refund_dollars:315672,gross_revenue:1910000,velocity_7d:33,velocity_per_day:4.7,velocity_required:6.2,yoy_paid_pct:52.31,yoy_paid_actual:923,yoy_paid_ly:606,yoy_revenue_pct:59.55,yoy_revenue_actual:1300000,yoy_revenue_ly:812000,ads_status:"PAUSED",ads_roas:19,valid_tickets:1090,paid_tickets:936,comped_tickets:154,webinar_closes:28,webinar_revenue:69000,refund_forecast_initial:21,refund_forecast_worst:30,refund_worst_dollars:573000,refund_worst_delta:257000,refund_2025_actual:18,speakers_confirmed:18,speakers_negotiating:["Natalie Ellis","Shay (Rising Woman)","Hal Elrod","Young Pueblo","Cynthia Thurlow"],venue_status:"No issues flagged"},
 
-  states:{mtd_sales:null,mtd_target:null,bottles_sold:null,bottles_target:null,revenue_per_session:null,units_left:null,days_to_expiry:null,sell_through_required:null,sell_through_actual:null,write_off_projection:null,roas_7d:null,roas_30d:null,roas_90d:null,cac_payback:null,cpl:null,repeat_rate:null,time_to_2nd:null,aov:null,paid_pct:null,organic_pct:null,notes:"Ads paused. Relotting in progress, ETA May 2026."},
+  states:{mtd_sales:null,mtd_target:null,bottles_sold:null,bottles_target:null,revenue_per_session:null,units_left:null,days_to_expiry:null,sell_through_required:null,sell_through_actual:null,write_off_projection:null,roas_7d:null,roas_30d:null,roas_90d:null,cac_payback:null,cpl:null,repeat_rate:null,time_to_2nd:null,aov:null,paid_pct:null,organic_pct:null,revenue_last_week:null,bottles_last_week:null,roas_last_week:null,roas_mtd:null,rev_org_session_last_week:null,notes:"Ads paused. Relotting in progress, ETA May 2026."},
 
   product:{platform_revenue_mtd:null,engagement:61.8,engagement_wow:0.1,engagement_wow_c:null,engagement_target_delta:-3.2,engagement_target_c:null,engagement_yoy:-1.2,engagement_yoy_c:null,activation:79.1,activation_wow:1.0,activation_wow_c:"red",activation_target_delta:-10.9,activation_target_c:null,activation_yoy:11.9,activation_yoy_c:null,
     revenue_refund_retention:[{metric:"Platform Revenue MTD",actual:null,mom:null,mom_c:null,vs_target:null,vs_target_c:null,yoy:null,yoy_c:null},{metric:"Y-MVM Refund*",actual:11.5,mom:-1.5,mom_c:"green",vs_target:1.5,vs_target_c:"red",yoy:-5.2,yoy_c:"green"},{metric:"Y-M13 retention*",actual:33.0,mom:-3.8,mom_c:null,vs_target:-5.0,vs_target_c:null,yoy:-3.7,yoy_c:null},{metric:"Y-M1 retention*",actual:90.1,mom:1.6,mom_c:null,vs_target:-1.9,vs_target_c:null,yoy:3.1,yoy_c:null},{metric:"M-M3 retention*",actual:32.0,mom:-4.7,mom_c:null,vs_target:-4.0,vs_target_c:null,yoy:-3.3,yoy_c:null}],
@@ -321,7 +321,7 @@ const mkBlankSeed = () => {
       ]}
     },
     events:{campaign_name:"",tickets_sold:null,tickets_target:null,tickets_remaining:null,revenue_actual:null,revenue_target:null,refund_rate:null,refund_dollars:null,gross_revenue:null,velocity_7d:null,velocity_per_day:null,velocity_required:null,yoy_paid_pct:null,yoy_paid_actual:null,yoy_paid_ly:null,yoy_revenue_pct:null,yoy_revenue_actual:null,yoy_revenue_ly:null,ads_status:"",ads_roas:null,valid_tickets:null,paid_tickets:null,comped_tickets:null,webinar_closes:null,webinar_revenue:null,refund_forecast_initial:null,refund_forecast_worst:null,refund_worst_dollars:null,refund_worst_delta:null,refund_2025_actual:null,speakers_confirmed:null,speakers_negotiating:[],venue_status:""},
-    states:{mtd_sales:null,mtd_target:null,bottles_sold:null,bottles_target:null,revenue_per_session:null,units_left:null,days_to_expiry:null,sell_through_required:null,sell_through_actual:null,write_off_projection:null,roas_7d:null,roas_30d:null,roas_90d:null,cac_payback:null,cpl:null,repeat_rate:null,time_to_2nd:null,aov:null,paid_pct:null,organic_pct:null,notes:""},
+    states:{mtd_sales:null,mtd_target:null,bottles_sold:null,bottles_target:null,revenue_per_session:null,units_left:null,days_to_expiry:null,sell_through_required:null,sell_through_actual:null,write_off_projection:null,roas_7d:null,roas_30d:null,roas_90d:null,cac_payback:null,cpl:null,repeat_rate:null,time_to_2nd:null,aov:null,paid_pct:null,organic_pct:null,revenue_last_week:null,bottles_last_week:null,roas_last_week:null,roas_mtd:null,rev_org_session_last_week:null,notes:""},
     product:{
       platform_revenue_mtd:null,engagement:null,engagement_wow:null,engagement_wow_c:null,engagement_target_delta:null,engagement_target_c:null,engagement_yoy:null,engagement_yoy_c:null,activation:null,activation_wow:null,activation_wow_c:null,activation_target_delta:null,activation_target_c:null,activation_yoy:null,activation_yoy_c:null,
       revenue_refund_retention:[
@@ -857,16 +857,48 @@ const Events = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment }
 
 const States = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment }) => {
   const s=data.states; const set=(p,v)=>onChange(["states",...p],v);
-  const groups=[{title:"Sales Performance",fields:[["MTD Sales","mtd_sales","$"],["MTD Target","mtd_target","$"],["Bottles Sold","bottles_sold",""],["Bottles Target","bottles_target",""],["Rev/Organic Session","revenue_per_session","$"]]},{title:"Inventory + Expiry Risk",fields:[["Units Left","units_left",""],["Days to Expiry","days_to_expiry","d"],["Required Sell-Through","sell_through_required","%"],["Actual Sell-Through","sell_through_actual","%"],["Projected Write-Off","write_off_projection","$"]]},{title:"Acquisition Efficiency",fields:[["ROAS 7D","roas_7d","%"],["ROAS 30D","roas_30d","%"],["ROAS 90D","roas_90d","%"],["CAC Payback","cac_payback","d"],["CPL","cpl","$"]]},{title:"Repeat + Channel Mix",fields:[["Repeat Rate","repeat_rate","%"],["Time to 2nd","time_to_2nd","d"],["AOV","aov","$"],["Paid %","paid_pct","%"],["Organic %","organic_pct","%"]]}];
+  const mainRows=[
+    {label:"Revenue",      lw:"revenue_last_week",          mtd:"mtd_sales",          prefix:"$", suffix:""},
+    {label:"Bottles Sold", lw:"bottles_last_week",          mtd:"bottles_sold",        prefix:"",  suffix:""},
+    {label:"ROAS",         lw:"roas_last_week",             mtd:"roas_mtd",            prefix:"",  suffix:"x"},
+    {label:"Rev/Org Session", lw:"rev_org_session_last_week", mtd:"revenue_per_session", prefix:"$", suffix:""},
+  ];
+  const fmt=(v,prefix,suffix)=>v===null?<span style={{color:"var(--faint)"}}>—</span>:`${prefix}${v}${suffix}`;
+  const isBlank=mainRows.every(r=>s[r.lw]===null&&s[r.mtd]===null)&&s.units_left===null;
+  const thSt={padding:"10px 14px",textAlign:"left",fontSize:"12px",fontWeight:600,color:"var(--muted)",borderBottom:"1px solid var(--border)"};
+  const tdLbl={padding:"10px 14px",borderBottom:"1px solid var(--border)",borderRight:"1px solid var(--border)",fontSize:"13px"};
+  const tdVal={padding:"10px 14px",borderBottom:"1px solid var(--border)",fontFamily:"ui-monospace,'SF Mono',Menlo,Consolas,monospace",fontSize:"13px"};
   return <div className="fade-up">
     <SHead owner="Moniek" title="States" cadence="Weekly · Physical product · Inventory + expiry is the binding constraint" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
-    {Object.entries(s).filter(([k])=>k!=="notes").every(([,v])=>v===null)&&!editing&&<div style={{background:"var(--red-bg)",border:"1px solid rgba(212,44,69,0.2)",borderRadius:"10px",padding:"12px 16px",marginBottom:"16px",fontSize:"13px",color:"var(--red)",display:"flex",alignItems:"center",gap:"10px"}}><AlertCircle size={14}/>Numbers not yet entered for this week.</div>}
-    <div className="rg-2" style={{gap:"16px"}}>
-      {groups.map(g=><Card key={g.title}><CardHead title={g.title}/><div style={{padding:"16px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
-        {g.fields.map(([lbl,k,u])=><div key={k}><div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",color:"var(--muted)",marginBottom:"4px"}}>{lbl}</div>{editing?<NI value={s[k]} onChange={v=>set([k],v)} prefix={u==="$"?"$":""} suffix={u==="%"||u==="d"?u:""}/>:<div className="font-mono" style={{fontSize:"15px"}}>{s[k]===null?<span style={{color:"var(--faint)"}}>—</span>:(u==="$"?`$${s[k]}`:u==="%"?`${s[k]}%`:`${s[k]}${u}`)}</div>}</div>)}
-      </div></Card>)}
-    </div>
-    <Card style={{marginTop:"16px"}}><CardHead title="Notes"/><div style={{padding:"16px"}}>{editing?<TI value={s.notes} onChange={v=>set(["notes"],v)} multi style={{width:"100%"}}/>:<p style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.7}}>{s.notes}</p>}</div></Card>
+    {isBlank&&!editing&&<div style={{background:"var(--red-bg)",border:"1px solid rgba(212,44,69,0.2)",borderRadius:"10px",padding:"12px 16px",marginBottom:"16px",fontSize:"13px",color:"var(--red)",display:"flex",alignItems:"center",gap:"10px"}}><AlertCircle size={14}/>Numbers not yet entered for this week.</div>}
+    <Card><CardHead title="States Report"/><div style={{padding:"16px"}}>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
+        <thead><tr>
+          <th style={{...thSt,width:"40%",borderRight:"1px solid var(--border)"}}></th>
+          <th style={{...thSt,borderRight:"1px solid var(--border)"}}>Last week</th>
+          <th style={thSt}>MTD</th>
+        </tr></thead>
+        <tbody>
+          {mainRows.map(r=><tr key={r.label}>
+            <td style={tdLbl}>{r.label}</td>
+            <td style={{...tdVal,borderRight:"1px solid var(--border)"}}>{editing?<NI value={s[r.lw]} onChange={v=>set([r.lw],v)} prefix={r.prefix} suffix={r.suffix}/>:fmt(s[r.lw],r.prefix,r.suffix)}</td>
+            <td style={tdVal}>{editing?<NI value={s[r.mtd]} onChange={v=>set([r.mtd],v)} prefix={r.prefix} suffix={r.suffix}/>:fmt(s[r.mtd],r.prefix,r.suffix)}</td>
+          </tr>)}
+        </tbody>
+      </table>
+      <table style={{borderCollapse:"collapse",fontSize:"13px",marginTop:"16px"}}>
+        <tbody><tr>
+          <td style={{...tdLbl,minWidth:"220px"}}>Inventory Left (Bottles)</td>
+          <td style={{...tdVal,minWidth:"160px"}}>{editing?<NI value={s.units_left} onChange={v=>set(["units_left"],v)}/>:fmt(s.units_left,"","")}</td>
+        </tr></tbody>
+      </table>
+    </div></Card>
+    <Card style={{marginTop:"16px"}}><div style={{padding:"16px",background:"rgba(0,160,160,0.06)",borderRadius:"8px"}}>
+      {editing
+        ?<TI value={s.notes} onChange={v=>set(["notes"],v)} multi style={{width:"100%"}}/>
+        :<ul style={{margin:0,paddingLeft:"20px"}}>{s.notes?s.notes.split("\n").filter(Boolean).map((line,i)=><li key={i} style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.7}}>{line}</li>):<li style={{fontSize:"13px",color:"var(--faint)"}}>Commentary</li>}</ul>
+      }
+    </div></Card>
     <SectionExtras cfg={data.page_config?.states||{}} onChange={v=>onChange(["page_config","states"],v)}/>
     <CommentsPanel comments={data.section_comments?.states} onChange={onComment} sectionLabel="States"/>
   </div>;
