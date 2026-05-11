@@ -263,7 +263,7 @@ export async function listFinalizedMeetings() {
 }
 
 export async function getMeetingByDate(date: string): Promise<string | null> {
-  const formula = `{Meeting Date}='${date}'`;
+  const formula = `DATETIME_FORMAT({Meeting Date},'YYYY-MM-DD')='${date}'`;
   const url = `/${MEETINGS_TABLE}?filterByFormula=${encodeURIComponent(formula)}&maxRecords=1&fields[]=Meeting+Date`;
   const data = await airtableFetch(url);
   if (!data.records || data.records.length === 0) return null;
