@@ -3,6 +3,7 @@ import {
   getDraftMeeting,
   listAllMeetings,
   createMeeting,
+  getMeetingByDate,
 } from "@/lib/airtable";
 
 export async function GET(req: NextRequest) {
@@ -23,8 +24,20 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const recordId = await createMeeting(body.data ?? {}, body.status ?? "Draft");
-    return NextResponse.json({ recordId });
+    const data = body.data ?? {};
+    const status = body.status ?? "Draft";
+
+    // Upsert: if a record already exists for this date, return it as-is
+    const date = data.meeting_date ?? data.date ?? null;
+    if (date) {
+      const existingId = await getMeetingByDate(date);
+      if (existingId) {
+        return NextResponse.json({ recordId: existingId, isNew: false });
+      }
+    }
+
+    const recordId = await createMeeting(data, status);
+    return NextResponse.json({ recordId, isNew: true });
   } catch (err) {
     console.error("[POST /api/meetings]", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

@@ -1468,6 +1468,7 @@ export default function App() {
   const dataRef=useRef(null); // always holds latest data — avoids stale closure in poll
   const localDirty=useRef(false); // true when local changes haven't been flushed to Airtable yet
   const prevItemsRef=useRef([]); // last server-confirmed action items — used to detect deletions
+  const creating=useRef(false); // guard against concurrent createNewDraft calls
 
   // Detect mobile viewport
   useEffect(()=>{
@@ -1614,24 +1615,39 @@ export default function App() {
     setActive("company_health");
   };
 
-  // Create a brand-new draft for a specific date, pre-seeded from the latest finalized meeting
+  // Create a draft for a specific date, pre-seeded from the latest finalized meeting.
+  // Server-side upsert ensures only one Airtable record per date — if one already exists
+  // for the chosen date, its ID is returned and its existing data is loaded (not overwritten).
   const createNewDraft=async(date)=>{
-    const latestFinalized=[...meetings].filter(m=>m.status==="Finalized").sort((a,b)=>b.date>a.date?1:-1)[0];
-    let seed;
-    if(latestFinalized){
-      const prev=await apiGet(`/api/meetings/${latestFinalized.id}`);
-      seed=(prev&&!prev.error)?mkSeededDraft(hydrate(prev),date):{...mkBlankSeed(),meeting_date:date,meeting_label:`Week of ${fmtDate(date)}`};
-    } else {
-      seed={...mkBlankSeed(),meeting_date:date,meeting_label:`Week of ${fmtDate(date)}`};
-    }
-    const res=await apiPost('/api/meetings',{data:seed,status:'Draft'});
-    if(res?.recordId){
-      setDraftRecordId(res.recordId);
-      setData(seed);
-      setViewingId(null);
-      lsSet('mv2:draft',{...seed,_recordId:res.recordId});
-      setMeetings(prev=>[{id:res.recordId,date,label:seed.meeting_label,status:'Draft'},...prev]);
-      setShowDateSelect(false);
+    if(creating.current) return;
+    creating.current=true;
+    try {
+      const latestFinalized=[...meetings].filter(m=>m.status==="Finalized").sort((a,b)=>b.date>a.date?1:-1)[0];
+      let seed;
+      if(latestFinalized){
+        const prev=await apiGet(`/api/meetings/${latestFinalized.id}`);
+        seed=(prev&&!prev.error)?mkSeededDraft(hydrate(prev),date):{...mkBlankSeed(),meeting_date:date,meeting_label:`Week of ${fmtDate(date)}`};
+      } else {
+        seed={...mkBlankSeed(),meeting_date:date,meeting_label:`Week of ${fmtDate(date)}`};
+      }
+      const res=await apiPost('/api/meetings',{data:seed,status:'Draft'});
+      if(res?.recordId){
+        let loadData=seed;
+        if(!res.isNew){
+          // Record already existed for this date — load its stored data instead of seeding over it
+          const existing=await apiGet(`/api/meetings/${res.recordId}`);
+          if(existing&&!existing.error) loadData=hydrate(existing);
+        }
+        setDraftRecordId(res.recordId);
+        setData(loadData);
+        setViewingId(null);
+        prevItemsRef.current=loadData.action_items?.items??[];
+        lsSet('mv2:draft',{...loadData,_recordId:res.recordId});
+        setMeetings(prev=>prev.some(m=>m.id===res.recordId)?prev:[{id:res.recordId,date,label:loadData.meeting_label||`Week of ${fmtDate(date)}`,status:'Draft'},...prev]);
+        setShowDateSelect(false);
+      }
+    } finally {
+      creating.current=false;
     }
   };
 

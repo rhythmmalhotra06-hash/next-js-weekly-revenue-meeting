@@ -262,6 +262,14 @@ export async function listFinalizedMeetings() {
   return (await listAllMeetings()).filter((m: { status: string }) => m.status === "Finalized");
 }
 
+export async function getMeetingByDate(date: string): Promise<string | null> {
+  const formula = `{Meeting Date}='${date}'`;
+  const url = `/${MEETINGS_TABLE}?filterByFormula=${encodeURIComponent(formula)}&maxRecords=1&fields[]=Meeting+Date`;
+  const data = await airtableFetch(url);
+  if (!data.records || data.records.length === 0) return null;
+  return data.records[0].id as string;
+}
+
 export async function deleteMeeting(recordId: string) {
   // First delete all linked action items
   const record = await airtableFetch(`/${MEETINGS_TABLE}/${recordId}`);
