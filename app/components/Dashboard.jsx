@@ -181,7 +181,7 @@ const emptyPageCfg = () => ({ header_image:null, header_text:"", page_notes:"", 
 // SEED DATA
 // ─────────────────────────────────────────────────────────
 const mkSeed = () => ({
-  id:uid(), meeting_date:todayISO(), meeting_label:"Week of May 6, 2026", status:"draft",
+  id:uid(), meeting_date:todayISO(), meeting_label:`Week of ${fmtDate(todayISO())}`, status:"draft",
   meeting_notes:"",
   section_comments:{ company_health:[], bu_performance:[], membership:[], pathways:[], masteries:[], events:[], states:[], product:[], action_items:[], meeting_notes:[] },
   page_config:{ company_health:emptyPageCfg(), bu_performance:emptyPageCfg(), membership:emptyPageCfg(), pathways:emptyPageCfg(), masteries:emptyPageCfg(), events:emptyPageCfg(), states:emptyPageCfg(), product:emptyPageCfg(), action_items:emptyPageCfg(), meeting_notes:emptyPageCfg() },
@@ -348,8 +348,6 @@ const mkBlankSeed = () => {
 // Seed a new draft from the previous week's finalized data.
 // Carries over all metrics/narratives; resets identity, comments, config, and closed action items.
 const mkSeededDraft = (prev, date) => {
-  const openItems = (prev.action_items?.items ?? []).filter(i => i.status !== "Complete");
-  const nextId = openItems.length > 0 ? Math.max(...openItems.map(i => Number(i.id ?? 0))) + 1 : 1;
   return {
     ...prev,
     id: uid(),
@@ -359,7 +357,7 @@ const mkSeededDraft = (prev, date) => {
     meeting_notes: "",
     section_comments: { company_health:[], bu_performance:[], membership:[], pathways:[], masteries:[], events:[], states:[], product:[], action_items:[], meeting_notes:[] },
     page_config: { company_health:emptyPageCfg(), bu_performance:emptyPageCfg(), membership:emptyPageCfg(), pathways:emptyPageCfg(), masteries:emptyPageCfg(), events:emptyPageCfg(), states:emptyPageCfg(), product:emptyPageCfg(), action_items:emptyPageCfg(), meeting_notes:emptyPageCfg() },
-    action_items: { ...prev.action_items, items: openItems, decisions: [], next_id: nextId },
+    action_items: { ...prev.action_items, items: [], decisions: [], next_id: 1 },
   };
 };
 
@@ -1186,12 +1184,14 @@ const formatISOToDue=(iso)=>{
   return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
 };
 
-const ItemRow=({ it, editing, updateItem, confirmDel, setConfirmDel, deleteItem, itemIndex })=>{
+const ItemRow=({ it, editing, updateItem, confirmDel, setConfirmDel, deleteItem, itemIndex, moveItem, totalItems })=>{
   const ss=statusStyle(it.status); const ps=prioStyle(it.priority);
   const num=String(itemIndex+1).padStart(2,"0");
   const nc=it.priority==="Critical"?"var(--red)":it.priority==="High"?"var(--amber)":"var(--muted)";
   return <tr className="ai-row" style={{borderBottom:"1px solid var(--border)",borderLeft:it.flagged?"3px solid var(--red)":"3px solid transparent"}}>
-    <td style={{padding:"12px 14px",fontFamily:"ui-monospace,'SF Mono','Roboto Mono',Menlo,Consolas,monospace",fontSize:"12px",fontWeight:700,color:nc,width:"36px"}}>{num}</td>
+    <td style={{padding:"12px 14px",fontFamily:"ui-monospace,'SF Mono','Roboto Mono',Menlo,Consolas,monospace",fontSize:"12px",fontWeight:700,color:nc,width:"36px"}}>
+      {editing?<input type="number" min={1} max={totalItems} value={itemIndex+1} onChange={e=>{const v=parseInt(e.target.value,10);if(!isNaN(v))moveItem(it.id,v-1);}} style={{width:"32px",textAlign:"center",background:"transparent",border:"none",padding:"0",fontFamily:"inherit",fontSize:"12px",fontWeight:700,color:nc,MozAppearance:"textfield"}}/>:num}
+    </td>
     <td style={{padding:"12px 14px",minWidth:"220px"}}>
       {editing
         ? <><div><input value={it.title} onChange={e=>updateItem(it.id,"title",e.target.value)} style={{fontWeight:600,fontSize:"13px",width:"100%",background:"transparent",border:"none",borderBottom:"1px solid transparent",borderRadius:"0",padding:"0 0 2px",color:"var(--text)"}} onFocus={e=>e.target.style.borderBottomColor="var(--purple)"} onBlur={e=>e.target.style.borderBottomColor="transparent"}/></div><div><input value={it.note} onChange={e=>updateItem(it.id,"note",e.target.value)} style={{fontSize:"11.5px",color:"var(--muted)",width:"100%",background:"transparent",border:"none",borderBottom:"1px solid transparent",borderRadius:"0",padding:"0 0 1px"}} onFocus={e=>e.target.style.borderBottomColor="var(--purple)"} onBlur={e=>e.target.style.borderBottomColor="transparent"}/></div></>
@@ -1218,7 +1218,7 @@ const ItemRow=({ it, editing, updateItem, confirmDel, setConfirmDel, deleteItem,
 };
 
 const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment, onImport }) => {
-  const ai=data.action_items;
+  const ai=data.action_items ?? {items:[],decisions:[],next_id:1,pm_flag_active:false,pm_flag_text:""};
   const [filter,setFilter]=useState("All");
   const [search,setSearch]=useState("");
   const [confirmDel,setConfirmDel]=useState(null);
@@ -1226,6 +1226,7 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
   const setAI=(key,val)=>onChange(["action_items",key],val);
   const updateItem=(id,k,v)=>setAI("items",ai.items.map(it=>it.id===id?{...it,[k]:v}:it));
   const deleteItem=(id)=>{ setAI("items",ai.items.filter(it=>it.id!==id)); setConfirmDel(null); };
+  const moveItem=(id,newPos)=>{ const arr=[...ai.items]; const from=arr.findIndex(x=>x.id===id); if(from<0) return; const clamped=Math.max(0,Math.min(newPos,arr.length-1)); const [item]=arr.splice(from,1); arr.splice(clamped,0,item); setAI("items",arr); };
   const addItem=(priority)=>{ const nextId=(ai.next_id||100); setAI("items",[...ai.items,{id:nextId,priority,title:"New action item",note:"Add details here",owner:"—",supporting:"—",due:"TBD",okr:"Execution Cadence",status:"Open",flagged:false}]); onChange(["action_items","next_id"],nextId+1); };
 
   const filtered=ai.items.filter(it=>{
@@ -1261,7 +1262,7 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
         <p style={{fontSize:"12px",color:"var(--muted)"}}>Blocked pending exec decisions — each day of delay = revenue at risk.</p>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:"12px"}}>
-        {ai.decisions.map((d,i)=>(
+        {(ai.decisions ?? []).map((d,i)=>(
           <div key={d.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:"10px",padding:"16px",borderTop:`3px solid ${dColors[i%dColors.length]}`}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"6px"}}>
               <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--muted)"}}>Decision {String(i+1).padStart(2,"0")}</div>
@@ -1272,7 +1273,8 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
               : <><div style={{fontSize:"14px",fontWeight:700,color:dColors[i%dColors.length],marginBottom:"8px"}}>{d.title}</div><p style={{fontSize:"12px",color:"var(--muted)",lineHeight:1.6}}>{d.body}</p></>}
           </div>
         ))}
-        {editing&&<button onClick={()=>setAI("decisions",[...ai.decisions,{id:uid(),title:"New decision needed",body:"Describe the decision and why it's blocked…"}])} style={{background:"transparent",border:"1.5px dashed var(--border)",borderRadius:"10px",padding:"16px",color:"var(--faint)",fontSize:"13px",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}><Plus size={14}/>Add decision</button>}
+        {editing&&<button onClick={()=>setAI("decisions",[...(ai.decisions??[]),{id:uid(),title:"New decision needed",body:"Describe the decision and why it's blocked…"}])} style={{background:"transparent",border:"1.5px dashed var(--border)",borderRadius:"10px",padding:"16px",color:"var(--faint)",fontSize:"13px",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}><Plus size={14}/>Add decision</button>}
+        {(ai.decisions??[]).length===0&&!editing&&<p style={{fontSize:"13px",color:"var(--faint)",padding:"4px 0",fontStyle:"italic"}}>No decisions required</p>}
       </div>
     </div>
 
@@ -1303,7 +1305,7 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
         {rows.length>0
           ? <Card><div style={{overflowX:"auto",overflowY:"auto",maxHeight:"560px"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
               <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["#","Action Item","Owner","Due","Priority","Status",""].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
-              <tbody>{rows.map(it=><ItemRow key={it.id} it={it} editing={editing} updateItem={updateItem} confirmDel={confirmDel} setConfirmDel={setConfirmDel} deleteItem={deleteItem} itemIndex={ai.items.findIndex(x=>x.id===it.id)}/>)}</tbody>
+              <tbody>{rows.map(it=><ItemRow key={it.id} it={it} editing={editing} updateItem={updateItem} confirmDel={confirmDel} setConfirmDel={setConfirmDel} deleteItem={deleteItem} itemIndex={ai.items.findIndex(x=>x.id===it.id)} moveItem={moveItem} totalItems={ai.items.length}/>)}</tbody>
             </table></div></Card>
           : <div style={{fontSize:"13px",color:"var(--faint)",fontStyle:"italic",padding:"12px 0"}}>No {prio.toLowerCase()} items match the current filter.</div>}
         {editing&&<button onClick={()=>addItem(prio)} style={{marginTop:"8px",padding:"6px 14px",background:"transparent",border:`1.5px dashed ${prio==="Critical"?"var(--red)":prio==="High"?"var(--amber)":"var(--border)"}`,borderRadius:"7px",color:prio==="Critical"?"var(--red)":prio==="High"?"var(--amber)":"var(--muted)",fontSize:"12px",fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:"6px"}}><Plus size={12}/>Add {prio} item</button>}
@@ -1668,7 +1670,11 @@ export default function App() {
         if(!res.isNew){
           // Record already existed for this date — load its stored data instead of seeding over it
           const existing=await apiGet(`/api/meetings/${res.recordId}`);
-          if(existing&&!existing.error) loadData=hydrate(existing);
+          if(existing&&!existing.error){
+            loadData=hydrate(existing);
+            loadData.meeting_label=`Week of ${fmtDate(date)}`;
+            loadData.meeting_date=date;
+          }
         }
         setDraftRecordId(res.recordId);
         setData(loadData);
