@@ -153,7 +153,7 @@ const fmtM   = (n) => { const v=parseFloat(n); if(isNaN(v)) return "—"; if(Mat
 const fmtPct = (n,d=1) => { const v=parseFloat(n); return isNaN(v)?"—":`${v.toFixed(d)}%`; };
 const fmtNum = (n) => { const v=parseFloat(n); return isNaN(v)?"—":v.toLocaleString("en-US",{maximumFractionDigits:1}); };
 const delta  = (a,t) => { const av=parseFloat(a),tv=parseFloat(t); return (isNaN(av)||isNaN(tv)||tv===0)?null:((av-tv)/tv)*100; };
-const status = (d) => d===null?"neutral":d>=-5?"good":d>=-15?"warn":"bad";
+const status = (d) => d===null?"neutral":d>=-5?"good":"bad";
 const localISO = (d=new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const todayISO = () => localISO();
 const nextTuesdayISO = () => { const d=new Date(); const diff=(2-d.getDay()+7)%7||7; d.setDate(d.getDate()+diff); return localISO(d); };
@@ -345,6 +345,24 @@ const mkBlankSeed = () => {
   };
 };
 
+// Seed a new draft from the previous week's finalized data.
+// Carries over all metrics/narratives; resets identity, comments, config, and closed action items.
+const mkSeededDraft = (prev, date) => {
+  const openItems = (prev.action_items?.items ?? []).filter(i => i.status !== "Complete");
+  const nextId = openItems.length > 0 ? Math.max(...openItems.map(i => Number(i.id ?? 0))) + 1 : 1;
+  return {
+    ...prev,
+    id: uid(),
+    meeting_date: date,
+    meeting_label: `Week of ${fmtDate(date)}`,
+    status: "draft",
+    meeting_notes: "",
+    section_comments: { company_health:[], bu_performance:[], membership:[], pathways:[], masteries:[], events:[], states:[], product:[], action_items:[], meeting_notes:[] },
+    page_config: { company_health:emptyPageCfg(), bu_performance:emptyPageCfg(), membership:emptyPageCfg(), pathways:emptyPageCfg(), masteries:emptyPageCfg(), events:emptyPageCfg(), states:emptyPageCfg(), product:emptyPageCfg(), action_items:emptyPageCfg(), meeting_notes:emptyPageCfg() },
+    action_items: { ...prev.action_items, items: openItems, decisions: [], next_id: nextId },
+  };
+};
+
 // Deep-merge remote/local data with seed so nested arrays (must_solve, rows,
 // products, items…) always exist even when Airtable fields are partially filled.
 const hydrate = (remote) => {
@@ -382,7 +400,7 @@ const Btn = ({ children, onClick, variant="primary", size="md", className="" }) 
 };
 const Pill = ({ label, variant="neutral" }) => {
   // OneFlow DS §2.5 canonical mapping — light bg + content text, full pill radius.
-  const s={good:{bg:"var(--grn-bg)",color:"var(--green)",border:"1px solid var(--grn-bg)"},warn:{bg:"var(--amb-bg)",color:"var(--amber)",border:"1px solid var(--amb-bg)"},bad:{bg:"var(--red-bg)",color:"var(--red)",border:"1px solid var(--red-bg)"},neutral:{bg:"rgba(127,127,127,0.1)",color:"var(--muted)",border:"1px solid var(--border)"},purple:{bg:"var(--mv-brand-light)",color:"var(--mv-brand-content)",border:"1px solid var(--mv-brand-border)"},gold:{bg:"var(--mv-amber-light)",color:"var(--mv-amber-content)",border:"1px solid var(--mv-amber-bright)"}}[variant]||{bg:"rgba(127,127,127,0.1)",color:"var(--muted)",border:"1px solid var(--border)"};
+  const s={good:{bg:"var(--grn-bg)",color:"var(--green)",border:"1px solid var(--grn-bg)"},warn:{bg:"var(--red-bg)",color:"var(--red)",border:"1px solid var(--red-bg)"},bad:{bg:"var(--red-bg)",color:"var(--red)",border:"1px solid var(--red-bg)"},neutral:{bg:"rgba(127,127,127,0.1)",color:"var(--muted)",border:"1px solid var(--border)"},purple:{bg:"var(--mv-brand-light)",color:"var(--mv-brand-content)",border:"1px solid var(--mv-brand-border)"},gold:{bg:"var(--mv-amber-light)",color:"var(--mv-amber-content)",border:"1px solid var(--mv-amber-bright)"}}[variant]||{bg:"rgba(127,127,127,0.1)",color:"var(--muted)",border:"1px solid var(--border)"};
   return <span style={{display:"inline-flex",alignItems:"center",gap:"4px",fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",padding:"3px 10px",borderRadius:"999px",background:s.bg,color:s.color,border:s.border}}>{label}</span>;
 };
 const Dt = ({ delta:d, suffix="%" }) => {
@@ -393,7 +411,7 @@ const Dt = ({ delta:d, suffix="%" }) => {
 };
 const DotBadge = ({ val, c }) => {
   if(val===null||val===undefined||isNaN(val)) return <span style={{color:"var(--faint)"}}>—</span>;
-  const dotColor=c==="green"?"var(--green)":c==="red"?"var(--red)":c==="amber"?"var(--amber)":val>0?"var(--green)":val<0?"var(--red)":"var(--muted)";
+  const dotColor=c==="green"?"var(--green)":c==="red"||c==="amber"?"var(--red)":val>0?"var(--green)":val<0?"var(--red)":"var(--muted)";
   return <span style={{display:"inline-flex",alignItems:"center",gap:"3px",fontSize:"12px",fontFamily:"ui-monospace,'SF Mono','Roboto Mono',Menlo,Consolas,monospace",color:"var(--text)"}}>{val>0?"+":""}{val.toFixed(1)}pp <span style={{color:dotColor,fontSize:"10px"}}>●</span></span>;
 };
 const NI = ({ value, onChange, prefix="", suffix="" }) => {
@@ -448,7 +466,7 @@ const Hero = ({ label, value, target, fmt="money", subtext, editing, onChange, o
     <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"16px",padding:large?"22px 24px":"18px 20px",...(glow&&st==="bad"?{boxShadow:"0 0 24px rgba(212,44,69,0.15)",borderColor:"rgba(212,44,69,0.22)"}:{})}}>
       <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px"}}>{label}</div>
       {editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><NI value={value} onChange={onChange} prefix={fmt==="money"?"$":""} suffix={fmt==="pct"?"%":""}/>{target!==undefined&&onChangeTarget&&<div style={{fontSize:"12px",color:"var(--muted)"}}>vs target: <NI value={target} onChange={onChangeTarget} prefix={fmt==="money"?"$":""} suffix={fmt==="pct"?"%":""}/></div>}{yoy!==undefined&&onChangeYoy&&<div style={{fontSize:"12px",color:"var(--muted)"}}>YoY %: <NI value={yoy} onChange={onChangeYoy} suffix="%"/></div>}</div>
-      :<><div className="font-display" style={{fontSize:large?"40px":"34px",fontWeight:400,lineHeight:1,marginBottom:"8px",color:st==="bad"?"var(--red)":st==="warn"?"var(--amber)":"var(--text)"}}>{mainVal}</div><div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>{target&&<span className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>vs {fmter(target)}</span>}{d!==null&&<Dt delta={d}/>}{yoy!==undefined&&<span className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>YoY {parseFloat(yoy)>0?"+":""}{fmtPct(yoy)}</span>}{subtext&&<span style={{fontSize:"12px",color:"var(--muted)"}}>{subtext}</span>}</div></>}
+      :<><div className="font-display" style={{fontSize:large?"40px":"34px",fontWeight:400,lineHeight:1,marginBottom:"8px",color:st==="bad"?"var(--red)":"var(--text)"}}>{mainVal}</div><div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>{target&&<span className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>vs {fmter(target)}</span>}{d!==null&&<Dt delta={d}/>}{yoy!==undefined&&<span className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>YoY {parseFloat(yoy)>0?"+":""}{fmtPct(yoy)}</span>}{subtext&&<span style={{fontSize:"12px",color:"var(--muted)"}}>{subtext}</span>}</div></>}
     </div>
   );
 };
@@ -674,7 +692,7 @@ const BUPerformance = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
               <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.actual} onChange={v=>{const n=[...rows];n[i]={...n[i],actual:v};onChange(["bu_performance"],n);}} prefix="$"/>:fmtM(r.actual)}</td>
               <td style={{padding:"14px",textAlign:"right",color:dd<0?"var(--red)":"var(--green)"}} className="font-mono">{dd>=0?"+":"–"}{fmtM(Math.abs(dd))}</td>
               <td style={{padding:"14px",textAlign:"right"}}><Dt delta={d}/></td>
-              <td style={{padding:"14px",textAlign:"right"}}><Pill label={st==="good"?"Green":st==="warn"?"Amber":"Red"} variant={st}/></td>
+              <td style={{padding:"14px",textAlign:"right"}}><Pill label={st==="good"?"Green":"Red"} variant={st}/></td>
               <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.yoy} onChange={v=>{const n=[...rows];n[i]={...n[i],yoy:v};onChange(["bu_performance"],n);}} suffix="%"/>:fmtPct(r.yoy,0)}</td>
               <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.ytd_ebitda} onChange={v=>{const n=[...rows];n[i]={...n[i],ytd_ebitda:v};onChange(["bu_performance"],n);}} suffix="%"/>:(r.ytd_ebitda===null?"n.a":fmtPct(r.ytd_ebitda,0))}</td>
               <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.fy_ebitda} onChange={v=>{const n=[...rows];n[i]={...n[i],fy_ebitda:v};onChange(["bu_performance"],n);}} suffix="%"/>:(r.fy_ebitda===null?"n.a":fmtPct(r.fy_ebitda,0))}</td>
@@ -687,7 +705,7 @@ const BUPerformance = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
             <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(autoActual)}</td>
             <td style={{padding:"14px",textAlign:"right",color:autoActual<autoTarget?"var(--red)":"var(--green)"}} className="font-mono">{autoActual>=autoTarget?"+":"–"}{fmtM(Math.abs(autoActual-autoTarget))}</td>
             <td style={{padding:"14px",textAlign:"right"}}><Dt delta={delta(autoActual,autoTarget)}/></td>
-            <td style={{padding:"14px",textAlign:"right"}}><Pill label={status(delta(autoActual,autoTarget))==="good"?"Green":status(delta(autoActual,autoTarget))==="warn"?"Amber":"Red"} variant={status(delta(autoActual,autoTarget))}/></td>
+            <td style={{padding:"14px",textAlign:"right"}}><Pill label={status(delta(autoActual,autoTarget))==="good"?"Green":"Red"} variant={status(delta(autoActual,autoTarget))}/></td>
             <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={total.yoy} onChange={v=>onChange(["bu_total","yoy"],v)} suffix="%"/>:fmtPct(total.yoy,0)}</td>
             <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={total.ytd_ebitda} onChange={v=>onChange(["bu_total","ytd_ebitda"],v)} suffix="%"/>:fmtPct(total.ytd_ebitda,0)}</td>
             <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={total.fy_ebitda} onChange={v=>onChange(["bu_total","fy_ebitda"],v)} suffix="%"/>:fmtPct(total.fy_ebitda,0)}</td>
@@ -815,13 +833,13 @@ const Events = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment }
       <div className="rg-4" style={{gap:"20px"}}>
         <div><div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--muted)",marginBottom:"10px"}}>Tickets Sold</div>{editing?<div style={{display:"flex",gap:"6px"}}><NI value={e.tickets_sold} onChange={v=>set(["tickets_sold"],v)}/><span style={{color:"var(--faint)"}}>/</span><NI value={e.tickets_target} onChange={v=>set(["tickets_target"],v)}/></div>:<><div className="font-display" style={{fontSize:"30px",lineHeight:1,marginBottom:"6px"}}>{fmtNum(e.tickets_sold)} <span style={{color:"var(--faint)",fontSize:"16px"}}>/ {fmtNum(e.tickets_target)}</span></div><div className="font-mono" style={{fontSize:"12px",color:"var(--muted)",marginBottom:"8px"}}>{tPct.toFixed(1)}% · {e.tickets_remaining} remaining</div><div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,tPct)}%`,background:"linear-gradient(90deg,var(--purple),var(--purple2))"}}/></div></>}</div>
         <div><div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--muted)",marginBottom:"10px"}}>Net Revenue</div>{editing?<div style={{display:"flex",gap:"6px"}}><NI value={e.revenue_actual} onChange={v=>set(["revenue_actual"],v)} prefix="$"/><span style={{color:"var(--faint)"}}>/</span><NI value={e.revenue_target} onChange={v=>set(["revenue_target"],v)} prefix="$"/></div>:<><div className="font-display" style={{fontSize:"30px",lineHeight:1,marginBottom:"6px"}}>{fmtM(e.revenue_actual)}</div><div className="font-mono" style={{fontSize:"12px",color:"var(--muted)",marginBottom:"8px"}}>{rPct.toFixed(1)}% of {fmtM(e.revenue_target)}</div><div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,rPct)}%`,background:"linear-gradient(90deg,var(--green),rgba(46,204,113,0.5))"}}/></div></>}</div>
-        <div><div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--muted)",marginBottom:"10px"}}>Refund Rate (Running)</div>{editing?<NI value={e.refund_rate} onChange={v=>set(["refund_rate"],v)} suffix="%"/>:<><div className="font-display" style={{fontSize:"30px",lineHeight:1,color:"var(--amber)",marginBottom:"6px"}}>{fmtPct(e.refund_rate)}</div><div className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>{fmtM(e.refund_dollars)} of {fmtM(e.gross_revenue)} gross</div></>}</div>
+        <div><div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--muted)",marginBottom:"10px"}}>Refund Rate (Running)</div>{editing?<NI value={e.refund_rate} onChange={v=>set(["refund_rate"],v)} suffix="%"/>:<><div className="font-display" style={{fontSize:"30px",lineHeight:1,color:"var(--red)",marginBottom:"6px"}}>{fmtPct(e.refund_rate)}</div><div className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>{fmtM(e.refund_dollars)} of {fmtM(e.gross_revenue)} gross</div></>}</div>
         <div><div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--muted)",marginBottom:"10px"}}>Sales Velocity 7D</div>{editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><NI value={e.velocity_7d} onChange={v=>set(["velocity_7d"],v)} suffix="tix"/><div style={{fontSize:"12px",color:"var(--muted)"}}>per day: <NI value={e.velocity_per_day} onChange={v=>set(["velocity_per_day"],v)}/></div></div>:<><div className="font-display" style={{fontSize:"30px",lineHeight:1,marginBottom:"6px"}}>{e.velocity_7d}</div><div className="font-mono" style={{fontSize:"12px",color:e.velocity_per_day<e.velocity_required?"var(--red)":"var(--green)"}}>~{e.velocity_per_day}/day · need {e.velocity_required}/day</div></>}</div>
       </div>
     </div>
     <div className="rg-2" style={{gap:"16px"}}>
       <Card><CardHead title="Refund Forecast"/><div style={{padding:"16px"}}>
-        <div className="rg-3" style={{gap:"12px",marginBottom:"14px"}}>{[["2025 Actual",`${e.refund_2025_actual}%`,"neutral"],["Current Running",fmtPct(e.refund_rate),"warn"],["Initial Forecast",`${e.refund_forecast_initial}%`,"neutral"]].map(([l,v,st])=><div key={l}><div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",color:"var(--muted)",marginBottom:"4px"}}>{l}</div><div className="font-mono" style={{fontSize:"18px",color:st==="warn"?"var(--amber)":"var(--text)"}}>{v}</div></div>)}</div>
+        <div className="rg-3" style={{gap:"12px",marginBottom:"14px"}}>{[["2025 Actual",`${e.refund_2025_actual}%`,"neutral"],["Current Running",fmtPct(e.refund_rate),"warn"],["Initial Forecast",`${e.refund_forecast_initial}%`,"neutral"]].map(([l,v,st])=><div key={l}><div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",color:"var(--muted)",marginBottom:"4px"}}>{l}</div><div className="font-mono" style={{fontSize:"18px",color:"var(--text)"}}>{v}</div></div>)}</div>
         <div style={{background:"var(--red-bg)",border:"1px solid rgba(212,44,69,0.2)",borderRadius:"8px",padding:"12px"}}><div style={{fontSize:"13px",fontWeight:600,color:"var(--red)",marginBottom:"4px"}}>Worst-case: up to {e.refund_forecast_worst}%</div><div style={{fontSize:"12px",color:"var(--muted)",lineHeight:1.6}}>Jet fuel crisis. At 30%: ~{fmtM(e.refund_worst_dollars)} (+{fmtM(e.refund_worst_delta)} vs today)</div></div>
       </div></Card>
       <Card><CardHead title="Speakers · Venue"/><div style={{padding:"16px"}}>
@@ -842,7 +860,7 @@ const States = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment }
   const groups=[{title:"Sales Performance",fields:[["MTD Sales","mtd_sales","$"],["MTD Target","mtd_target","$"],["Bottles Sold","bottles_sold",""],["Bottles Target","bottles_target",""],["Rev/Organic Session","revenue_per_session","$"]]},{title:"Inventory + Expiry Risk",fields:[["Units Left","units_left",""],["Days to Expiry","days_to_expiry","d"],["Required Sell-Through","sell_through_required","%"],["Actual Sell-Through","sell_through_actual","%"],["Projected Write-Off","write_off_projection","$"]]},{title:"Acquisition Efficiency",fields:[["ROAS 7D","roas_7d","%"],["ROAS 30D","roas_30d","%"],["ROAS 90D","roas_90d","%"],["CAC Payback","cac_payback","d"],["CPL","cpl","$"]]},{title:"Repeat + Channel Mix",fields:[["Repeat Rate","repeat_rate","%"],["Time to 2nd","time_to_2nd","d"],["AOV","aov","$"],["Paid %","paid_pct","%"],["Organic %","organic_pct","%"]]}];
   return <div className="fade-up">
     <SHead owner="Moniek" title="States" cadence="Weekly · Physical product · Inventory + expiry is the binding constraint" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
-    {Object.entries(s).filter(([k])=>k!=="notes").every(([,v])=>v===null)&&!editing&&<div style={{background:"var(--amb-bg)",border:"1px solid rgba(212,120,0,0.2)",borderRadius:"10px",padding:"12px 16px",marginBottom:"16px",fontSize:"13px",color:"var(--amber)",display:"flex",alignItems:"center",gap:"10px"}}><AlertCircle size={14}/>Numbers not yet entered for this week.</div>}
+    {Object.entries(s).filter(([k])=>k!=="notes").every(([,v])=>v===null)&&!editing&&<div style={{background:"var(--red-bg)",border:"1px solid rgba(212,44,69,0.2)",borderRadius:"10px",padding:"12px 16px",marginBottom:"16px",fontSize:"13px",color:"var(--red)",display:"flex",alignItems:"center",gap:"10px"}}><AlertCircle size={14}/>Numbers not yet entered for this week.</div>}
     <div className="rg-2" style={{gap:"16px"}}>
       {groups.map(g=><Card key={g.title}><CardHead title={g.title}/><div style={{padding:"16px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
         {g.fields.map(([lbl,k,u])=><div key={k}><div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",color:"var(--muted)",marginBottom:"4px"}}>{lbl}</div>{editing?<NI value={s[k]} onChange={v=>set([k],v)} prefix={u==="$"?"$":""} suffix={u==="%"||u==="d"?u:""}/>:<div className="font-mono" style={{fontSize:"15px"}}>{s[k]===null?<span style={{color:"var(--faint)"}}>—</span>:(u==="$"?`$${s[k]}`:u==="%"?`${s[k]}%`:`${s[k]}${u}`)}</div>}</div>)}
@@ -856,9 +874,9 @@ const States = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment }
 
 const Product = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment }) => {
   const p=data.product; const set=(k,v)=>onChange(["product",k],v);
-  const sColors={green:"var(--green)",amber:"var(--amber)",red:"var(--red)",black:"var(--faint)"};
+  const sColors={green:"var(--green)",amber:"var(--red)",red:"var(--red)",black:"var(--faint)"};
   const sLabels={green:"On Track",amber:"At Risk",red:"Off Track",black:"TBD"};
-  const colPicker=(val,onChangeFn)=><select value={val??"auto"} onChange={e=>onChangeFn(e.target.value==="auto"?null:e.target.value)} style={{width:"52px",fontSize:"10px",padding:"2px",background:"var(--input-bg)",color:"var(--text)",border:"1px solid var(--input-border)",borderRadius:"4px"}}><option value="auto">auto</option><option value="green">🟢</option><option value="amber">🟡</option><option value="red">🔴</option></select>;
+  const colPicker=(val,onChangeFn)=><select value={val==="amber"?"red":val??"auto"} onChange={e=>onChangeFn(e.target.value==="auto"?null:e.target.value)} style={{width:"52px",fontSize:"10px",padding:"2px",background:"var(--input-bg)",color:"var(--text)",border:"1px solid var(--input-border)",borderRadius:"4px"}}><option value="auto">auto</option><option value="green">🟢</option><option value="red">🔴</option></select>;
   const thStyle={padding:"6px 6px",textAlign:"right",fontSize:"10px",fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",color:"var(--muted)"};
   const thStyleL={...thStyle,textAlign:"left",padding:"6px 8px"};
   return <div className="fade-up">
@@ -982,13 +1000,13 @@ const Product = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment 
       </Card>
     </div>
     {/* Initiatives table */}
-    <Card><CardHead title="Key Product Initiatives" action={editing&&<Btn variant="ghost" size="sm" onClick={()=>set("initiatives",[...p.initiatives,{name:"",status:"amber",note:"",timeline:"",obj:""}])}><Plus size={12}/>Add</Btn>}/>
+    <Card><CardHead title="Key Product Initiatives" action={editing&&<Btn variant="ghost" size="sm" onClick={()=>set("initiatives",[...p.initiatives,{name:"",status:"red",note:"",timeline:"",obj:""}])}><Plus size={12}/>Add</Btn>}/>
       <div style={{overflowX:"auto",overflowY:"auto",maxHeight:"480px"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
         <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["#","Initiative","Status","Note","Timeline","Objective"].map(h=><th key={h} style={{padding:"12px 14px",textAlign:h==="#"||h==="Initiative"||h==="Note"?"left":"center",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)"}}>{h}</th>)}</tr></thead>
         <tbody>{p.initiatives.map((it,i)=><tr key={i} style={{borderBottom:"1px solid var(--border)"}} className="ai-row">
           <td style={{padding:"14px",color:"var(--faint)",fontSize:"12px",fontFamily:"monospace",width:"28px"}}>{i+1}</td>
           <td style={{padding:"14px",fontWeight:500}}>{editing?<TI value={it.name} onChange={v=>{const n=[...p.initiatives];n[i]={...n[i],name:v};set("initiatives",n);}}/>:it.name}</td>
-          <td style={{padding:"14px",textAlign:"center"}}>{editing?<select value={it.status} onChange={e=>{const n=[...p.initiatives];n[i]={...n[i],status:e.target.value};set("initiatives",n);}} style={{width:"120px"}}><option value="green">🟢 On Track</option><option value="amber">🟡 At Risk</option><option value="red">🔴 Off Track</option><option value="black">⚫ TBD</option></select>:<span style={{color:sColors[it.status],fontSize:"13px",fontWeight:600}}>{sLabels[it.status]}</span>}</td>
+          <td style={{padding:"14px",textAlign:"center"}}>{editing?<select value={it.status} onChange={e=>{const n=[...p.initiatives];n[i]={...n[i],status:e.target.value};set("initiatives",n);}} style={{width:"120px"}}><option value="green">🟢 On Track</option><option value="red">🔴 At Risk / Off Track</option><option value="black">⚫ TBD</option></select>:<span style={{color:sColors[it.status],fontSize:"13px",fontWeight:600}}>{sLabels[it.status]}</span>}</td>
           <td style={{padding:"14px",color:"var(--muted)",fontSize:"12px"}}>{editing?<TI value={it.note} onChange={v=>{const n=[...p.initiatives];n[i]={...n[i],note:v};set("initiatives",n);}}/>:it.note}</td>
           <td style={{padding:"14px",textAlign:"center",fontFamily:"monospace",fontSize:"12px",color:"var(--muted)"}}>{editing?<TI value={it.timeline} onChange={v=>{const n=[...p.initiatives];n[i]={...n[i],timeline:v};set("initiatives",n);}} style={{width:"100px"}}/>:it.timeline}</td>
           <td style={{padding:"14px",textAlign:"center",fontSize:"12px"}}><Pill label={it.obj} variant="purple"/></td>
@@ -1007,8 +1025,8 @@ const OKR_OPTIONS=["Revenue Protection","Revenue Close","Launch Execution","Reve
 const STATUS_OPTIONS=["Open","In Progress","Complete","Blocked"];
 const PRIORITY_OPTIONS=["Critical","High","Medium"];
 
-const statusStyle=(s)=>s==="Open"?{bg:"var(--red-bg)",color:"var(--red)"}:s==="In Progress"?{bg:"var(--amb-bg)",color:"var(--amber)"}:s==="Complete"?{bg:"var(--grn-bg)",color:"var(--green)"}:s==="Blocked"?{bg:"rgba(122,18,212,0.12)",color:"var(--purple2)"}:{bg:"rgba(127,127,127,0.1)",color:"var(--muted)"};
-const prioStyle=(p)=>p==="Critical"?{bg:"var(--red-bg)",color:"var(--red)"}:p==="High"?{bg:"var(--amb-bg)",color:"var(--amber)"}:{bg:"rgba(127,127,127,0.08)",color:"var(--muted)"};
+const statusStyle=(s)=>s==="Open"?{bg:"var(--red-bg)",color:"var(--red)"}:s==="In Progress"?{bg:"rgba(127,127,127,0.1)",color:"var(--muted)"}:s==="Complete"?{bg:"var(--grn-bg)",color:"var(--green)"}:s==="Blocked"?{bg:"rgba(122,18,212,0.12)",color:"var(--purple2)"}:{bg:"rgba(127,127,127,0.1)",color:"var(--muted)"};
+const prioStyle=(p)=>p==="Critical"?{bg:"var(--red-bg)",color:"var(--red)"}:{bg:"rgba(127,127,127,0.08)",color:"var(--muted)"};
 
 // ─────────────────────────────────────────────────────────
 // TRANSCRIPT → AI PARSER PANEL
@@ -1185,8 +1203,8 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
   });
 
   const grouped=(prio)=>filtered.filter(it=>it.priority===prio);
-  const stats=[{n:ai.items.length,l:"Total Items",c:"var(--purple)"},{n:ai.items.filter(it=>it.priority==="Critical"&&it.status!=="Complete").length,l:"Critical Open",c:"var(--red)"},{n:ai.items.filter(it=>it.status==="Open").length,l:"Open",c:"var(--amber)"},{n:ai.items.filter(it=>it.status==="In Progress").length,l:"In Progress",c:"var(--amber)"},{n:ai.items.filter(it=>it.status==="Complete").length,l:"Complete",c:"var(--green)"}];
-  const dColors=["var(--green)","var(--amber)","var(--red)","var(--purple)","var(--red)"];
+  const stats=[{n:ai.items.length,l:"Total Items",c:"var(--purple)"},{n:ai.items.filter(it=>it.priority==="Critical"&&it.status!=="Complete").length,l:"Critical Open",c:"var(--red)"},{n:ai.items.filter(it=>it.status==="Open").length,l:"Open",c:"var(--red)"},{n:ai.items.filter(it=>it.status==="In Progress").length,l:"In Progress",c:"var(--muted)"},{n:ai.items.filter(it=>it.status==="Complete").length,l:"Complete",c:"var(--green)"}];
+  const dColors=["var(--green)","var(--purple)","var(--red)","var(--green)","var(--red)"];
 
   return <div className="fade-up">
     <SHead owner="All" title="Action Item Register" cadence="Weekly · All BUs · Editable tracker" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
@@ -1594,9 +1612,16 @@ export default function App() {
     setActive("company_health");
   };
 
-  // Create a brand-new draft for a specific date
+  // Create a brand-new draft for a specific date, pre-seeded from the latest finalized meeting
   const createNewDraft=async(date)=>{
-    const seed={...mkBlankSeed(),meeting_date:date,meeting_label:`Week of ${fmtDate(date)}`};
+    const latestFinalized=[...meetings].filter(m=>m.status==="Finalized").sort((a,b)=>b.date>a.date?1:-1)[0];
+    let seed;
+    if(latestFinalized){
+      const prev=await apiGet(`/api/meetings/${latestFinalized.id}`);
+      seed=(prev&&!prev.error)?mkSeededDraft(hydrate(prev),date):{...mkBlankSeed(),meeting_date:date,meeting_label:`Week of ${fmtDate(date)}`};
+    } else {
+      seed={...mkBlankSeed(),meeting_date:date,meeting_label:`Week of ${fmtDate(date)}`};
+    }
     const res=await apiPost('/api/meetings',{data:seed,status:'Draft'});
     if(res?.recordId){
       setDraftRecordId(res.recordId);
