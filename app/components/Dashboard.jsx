@@ -172,7 +172,7 @@ const lsDel = (k) => { try { localStorage.removeItem(k); } catch {} };
 // API helpers — Airtable-backed persistence
 const apiGet = async (path) => { try { const r=await fetch(path); return r.ok?r.json():null; } catch { return null; } };
 const apiPost = async (path,body) => { try { const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); return r.ok?r.json():null; } catch { return null; } };
-const apiPut = async (path,body) => { try { await fetch(path,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); } catch {} };
+const apiPut = async (path,body) => { try { const r=await fetch(path,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); return r.ok; } catch { return false; } };
 const apiDel = async (path) => { const r=await fetch(path,{method:"DELETE"}); if(!r.ok) throw new Error(await r.text()); return r; };
 
 const emptyPageCfg = () => ({ header_image:null, header_text:"", page_notes:"", page_notes_2:"" });
@@ -615,12 +615,16 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
         </div>
       </Card>
     </div>
-    <Card><CardHead title="Full Year Rolling Forecast (3+9)"/>
+    <Card><CardHead title={`Full Year Rolling Forecast (${ch.rf.period||"3+9"})`}/>
       {editing
         ?<div style={{padding:"16px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"14px"}}>
+            <span style={{fontSize:"11px",color:"var(--muted)"}}>Period:</span>
+            <TI value={ch.rf.period} onChange={v=>set(["rf","period"],v)} style={{width:"60px"}} placeholder="3+9"/>
+          </div>
           <p style={{fontSize:"12px",color:"var(--muted)",marginBottom:"14px",fontStyle:"italic"}}>All figures in $M unless labelled. Fill in what you have — blanks show &quot;—&quot; in view mode.</p>
           <div className="rg-4" style={{gap:"12px"}}>
-            {[{g:"Sales",f:[["sa","Actual","$M"],["st","Target","$M"],["yoy","YoY","%"]]},{g:"Margins",f:[["gp","GP %","%"],["ea","EBITDA Act.","$M"],["ep","EBITDA %","%"],["et","EBITDA Tgt.","%"]]},{g:"Costs",f:[["oa","OPEX","$M"],["op","OPEX %","%"],["ot","OPEX Tgt.","%"],["ada","AdSpend","$M"],["adp","AdSpend %","%"],["adly","AdSpend LY","$M"],["hcp","HC %","%"],["hct","HC Tgt.","%"],["ga","G&A","$M"]]},{g:"Bottom Line",f:[["ni","Net Inc.","$M"],["nip","NI %","%"],["c","Cash","$M"],["ct","Cash Tgt.","$M"],["cly","Cash LY","$M"]]}].map(({g,f})=>(
+            {[{g:"Sales",f:[["sa","Forecast","$M"],["st","Target","$M"],["yoy","YoY","%"]]},{g:"Margins",f:[["gp","GP %","%"],["gt","GP % Tgt.","%"],["ea","EBITDA Act.","$M"],["ep","EBITDA %","%"],["et","EBITDA Tgt.","%"]]},{g:"Costs",f:[["oa","OPEX","$M"],["op","OPEX %","%"],["ot","OPEX Tgt.","%"],["ada","AdSpend","$M"],["adp","AdSpend %","%"],["adly","AdSpend LY","$M"],["adlyp","AdSpend LY %","%"],["hcp","HC %","%"],["hct","HC Tgt.","%"],["ga","G&A","$M"]]},{g:"Bottom Line",f:[["ni","Net Inc.","$M"],["nip","NI %","%"],["nit","NI Tgt. %","%"],["c","Cash","$M"],["ct","Cash Tgt.","$M"],["cly","Cash LY","$M"]]}].map(({g,f})=>(
               <div key={g} style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"8px",padding:"12px"}}>
                 <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:"var(--gold)",marginBottom:"10px"}}>{g}</div>
                 <div style={{display:"flex",flexDirection:"column",gap:"7px"}}>
@@ -636,7 +640,7 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
           </div>
         </div>
         :<div className="rg-4" style={{padding:"16px",gap:"16px"}}>
-          {[["Sales",`$${ch.rf.sa}M`,`$${ch.rf.st}M target`,ch.rf.yoy<0?"bad":"good"],["GP Margin",fmtPct(ch.rf.gp),"above target","good"],["EBITDA",`$${ch.rf.ea}M (${ch.rf.ep}%)`,`${ch.rf.et}% target`,"bad"],["OPEX",`$${ch.rf.oa}M (${ch.rf.op}%)`,`${ch.rf.ot}% target`,"bad"],["Ad Spend",`$${ch.rf.ada}M (${ch.rf.adp}%)`,`$${ch.rf.adly}M LY`,"good"],["Headcount",`${ch.rf.hcp}%`,`${ch.rf.hct}% target`,"bad"],["G&A",`$${ch.rf.ga}M`,"","neutral"],["Net Income",`$${ch.rf.ni}M (${ch.rf.nip}%)`,""," neutral"],["Cash",`$${ch.rf.c}M`,`$${ch.rf.ct}M tgt / $${ch.rf.cly}M LY`,"bad"]].map(([l,v,sub,st],i)=>(
+          {(()=>{const fmtRFm=n=>{const v=parseFloat(n);return isNaN(v)?"—":`$${v.toFixed(1)}M`;};const yoyStr=ch.rf.yoy!=null?(parseFloat(ch.rf.yoy)>0?"+":"")+fmtPct(ch.rf.yoy):"—";const gpSt=delta(ch.rf.gp,ch.rf.gt)>=0?"good":"bad";return[["Sales",fmtRFm(ch.rf.sa),`${fmtRFm(ch.rf.st)} target · YoY ${yoyStr}`,ch.rf.yoy<0?"bad":"good"],["GP Margin",fmtPct(ch.rf.gp),`tgt ${fmtPct(ch.rf.gt)}`,gpSt],["EBITDA",`${fmtRFm(ch.rf.ea)} (${fmtPct(ch.rf.ep)})`,`tgt ${fmtPct(ch.rf.et)}`,"bad"],["OPEX",`${fmtRFm(ch.rf.oa)} (${fmtPct(ch.rf.op)})`,`tgt ${fmtPct(ch.rf.ot)}`,"bad"],["Ad Spend",`${fmtRFm(ch.rf.ada)} (${fmtPct(ch.rf.adp)})`,`${fmtRFm(ch.rf.adly)} LY (${fmtPct(ch.rf.adlyp)})`,"good"],["Headcount",fmtPct(ch.rf.hcp),`tgt ${fmtPct(ch.rf.hct)}`,"bad"],["G&A",fmtRFm(ch.rf.ga),"","neutral"],["Net Income",`${fmtRFm(ch.rf.ni)} (${fmtPct(ch.rf.nip)})`,`tgt ${fmtPct(ch.rf.nit)}`,"neutral"],["Cash",fmtRFm(ch.rf.c),`${fmtRFm(ch.rf.ct)} tgt / ${fmtRFm(ch.rf.cly)} LY`,"bad"]];})().map(([l,v,sub,st],i)=>(
             <div key={i} style={{borderLeft:`2px solid ${st==="good"?"var(--green)":st==="bad"?"var(--red)":st==="warn"?"var(--amber)":"var(--border)"}`,paddingLeft:"12px"}}>
               <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",marginBottom:"4px"}}>{l}</div>
               <div className="font-mono" style={{fontSize:"14px",color:st==="bad"?"var(--red)":st==="good"?"var(--green)":"var(--text)"}}>{v} <span style={{color:st==="good"?"var(--green)":st==="bad"?"var(--red)":"transparent"}}>{st==="good"?"✓":st==="bad"?"✗":""}</span></div>
@@ -1492,7 +1496,7 @@ export default function App() {
   const showFlash=()=>{ setFlash(true); setTimeout(()=>setFlash(false),1800); };
   const updateData=(path,value)=>setData(prev=>{ const next=JSON.parse(JSON.stringify(prev)); let c=next; for(let i=0;i<path.length-1;i++) c=c[path[i]]; c[path[path.length-1]]=value; return next; });
   const startEdit=(id)=>{ setDraftBak(JSON.parse(JSON.stringify(data))); setEditingSec(id); };
-  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); lsSet('mv2:dirty',true); if(draftRecordId){ apiPut(`/api/meetings/${draftRecordId}`,{data}).then(()=>{ localDirty.current=false; lsDel('mv2:dirty'); }); } setEditingSec(null); setDraftBak(null); showFlash(); };
+  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); lsSet('mv2:dirty',true); if(draftRecordId){ apiPut(`/api/meetings/${draftRecordId}`,{data}).then(ok=>{ if(ok){ localDirty.current=false; lsDel('mv2:dirty'); } }); } setEditingSec(null); setDraftBak(null); showFlash(); };
 
   // Atomic import-from-transcript: append AI-extracted items + decisions and
   // immediately persist to localStorage + Airtable. Bypasses the 15s autosave
@@ -1514,9 +1518,7 @@ export default function App() {
       if(draftRecordId&&viewingId===null){
         clearTimeout(timer.current);
         clearTimeout(apiTimer.current);
-        apiPut(`/api/meetings/${draftRecordId}`,{data:next});
-        localDirty.current=false;
-        lsDel('mv2:dirty');
+        apiPut(`/api/meetings/${draftRecordId}`,{data:next}).then(ok=>{ if(ok){ localDirty.current=false; lsDel('mv2:dirty'); } });
       }
       return next;
     });
@@ -1536,9 +1538,8 @@ export default function App() {
       clearTimeout(apiTimer.current);
       apiTimer.current=setTimeout(async()=>{
         if(draftRecordId){
-          await apiPut(`/api/meetings/${draftRecordId}`,{data});
-          localDirty.current=false; // Airtable is now in sync
-          lsDel('mv2:dirty');
+          const ok=await apiPut(`/api/meetings/${draftRecordId}`,{data});
+          if(ok){ localDirty.current=false; lsDel('mv2:dirty'); } // only clear when Airtable confirmed
         }
       },15000);
     },900);
