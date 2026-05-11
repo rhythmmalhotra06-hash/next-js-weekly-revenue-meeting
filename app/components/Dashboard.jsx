@@ -213,7 +213,7 @@ const mkSeed = () => ({
 
   membership:{sales_actual:406939,sales_target:469168,new_subs:718,lost_subs:1036,roas_30d:60,cpl:11.69,cpl_prev:16.26,new_per_day:177,lost_per_day:259,refund_rate:13.7,refund_rate_ly:14.6,initiatives:["Offer testing $299 vs $199 (Manifesting + AI & Entrepreneurship)","Social Login on Landing Page","Concierge starts May 11 for Members","Pathways live on platform — more upsell/cross-sell","Manifesting Summit VIP upsell $39 vs $29","Build WhatsApp list and strategy"]},
 
-  pathways:{rows:[{name:"Manifesting",ad_spend:null,revenue:null,roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,aov:null},{name:"Entrepreneurship",ad_spend:null,revenue:null,roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,aov:null},{name:"Speaking & Authorship",ad_spend:null,revenue:null,roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,aov:null},{name:"Longevity",ad_spend:null,revenue:null,roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,aov:null}],commentary:""},
+  pathways:{rows:[{name:"Manifesting",ad_spend:null,revenue:null,roas_1d:null,roas_3d:null,roas_7d:null,roas_14d:null,roas_30d:null,cpl:null,aov:null},{name:"Entrepreneurship",ad_spend:null,revenue:null,roas_1d:null,roas_3d:null,roas_7d:null,roas_14d:null,roas_30d:null,cpl:null,aov:null},{name:"Speaking & Authorship",ad_spend:null,revenue:null,roas_1d:null,roas_3d:null,roas_7d:null,roas_14d:null,roas_30d:null,cpl:null,aov:null},{name:"Longevity",ad_spend:null,revenue:null,roas_1d:null,roas_3d:null,roas_7d:null,roas_14d:null,roas_30d:null,cpl:null,aov:null}],commentary:""},
 
   masteries:{sales_mtd:52520,cash_collected_mtd:60970,refund_rate:9.2,cash_forecast_mtd:3300000,
     products:[{name:"Mastery",sales:25850,cash:30180,refund_pct:0,pif_pct:100},{name:"Accelerator",sales:0,cash:0,refund_pct:0,pif_pct:0},{name:"Certification",sales:26680,cash:30790,refund_pct:18.2,pif_pct:72}],
@@ -293,10 +293,10 @@ const mkBlankSeed = () => {
     bu_insights:"",
     membership:{sales_actual:null,sales_target:null,new_subs:null,lost_subs:null,roas_30d:null,cpl:null,cpl_prev:null,new_per_day:null,lost_per_day:null,refund_rate:null,refund_rate_ly:null,initiatives:[]},
     pathways:{rows:[
-      {name:"Manifesting",ad_spend:null,revenue:null,roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,aov:null},
-      {name:"Entrepreneurship",ad_spend:null,revenue:null,roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,aov:null},
-      {name:"Speaking & Authorship",ad_spend:null,revenue:null,roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,aov:null},
-      {name:"Longevity",ad_spend:null,revenue:null,roas_7d:null,roas_30d:null,roas_90d:null,cpl:null,aov:null}
+      {name:"Manifesting",ad_spend:null,revenue:null,roas_1d:null,roas_3d:null,roas_7d:null,roas_14d:null,roas_30d:null,cpl:null,aov:null},
+      {name:"Entrepreneurship",ad_spend:null,revenue:null,roas_1d:null,roas_3d:null,roas_7d:null,roas_14d:null,roas_30d:null,cpl:null,aov:null},
+      {name:"Speaking & Authorship",ad_spend:null,revenue:null,roas_1d:null,roas_3d:null,roas_7d:null,roas_14d:null,roas_30d:null,cpl:null,aov:null},
+      {name:"Longevity",ad_spend:null,revenue:null,roas_1d:null,roas_3d:null,roas_7d:null,roas_14d:null,roas_30d:null,cpl:null,aov:null}
     ],commentary:""},
     masteries:{
       sales_mtd:null,cash_collected_mtd:null,refund_rate:null,cash_forecast_mtd:null,
@@ -768,10 +768,10 @@ const Pathways = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment
   return <div className="fade-up">
     <SHead owner="Dan" title="Pathways" cadence="Weekly · Sub-slot under Membership · Per-pathway funnel breakdown" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
     <Card style={{marginBottom:"16px"}}><div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
-      <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["Pathway","Ad Spend MTD","Revenue MTD","ROAS 7D","ROAS 30D","ROAS 90D","CPL","AOV"].map(h=><th key={h} style={{padding:"12px 14px",textAlign:h==="Pathway"?"left":"right",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)"}}>{h}</th>)}</tr></thead>
+      <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["Pathway","Ad Spend MTD","Revenue MTD","ROAS 1D","ROAS 3D","ROAS 7D","ROAS 14D","ROAS 30D","CPL","AOV"].map(h=><th key={h} style={{padding:"12px 14px",textAlign:h==="Pathway"?"left":"right",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)"}}>{h}</th>)}</tr></thead>
       <tbody>{p.rows.map((r,i)=><tr key={i} style={{borderBottom:"1px solid var(--border)"}} className="ai-row">
         <td style={{padding:"14px",fontFamily:"'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif",fontSize:"16px",fontWeight:700,letterSpacing:"-0.01em"}}>{r.name}</td>
-        {["ad_spend","revenue","roas_7d","roas_30d","roas_90d","cpl","aov"].map(k=><td key={k} style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r[k]} onChange={v=>{const n=[...p.rows];n[i]={...n[i],[k]:v};set("rows",n);}} prefix={["ad_spend","revenue","cpl","aov"].includes(k)?"$":""} suffix={["roas_7d","roas_30d","roas_90d"].includes(k)?"%":""}/>:(r[k]===null?<span style={{color:"var(--faint)"}}>—</span>:(k.includes("roas")?fmtPct(r[k],0):fmtM(r[k])))}</td>)}
+        {["ad_spend","revenue","roas_1d","roas_3d","roas_7d","roas_14d","roas_30d","cpl","aov"].map(k=><td key={k} style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r[k]} onChange={v=>{const n=[...p.rows];n[i]={...n[i],[k]:v};set("rows",n);}} prefix={["ad_spend","revenue","cpl","aov"].includes(k)?"$":""} suffix={["roas_1d","roas_3d","roas_7d","roas_14d","roas_30d"].includes(k)?"%":""}/>:(r[k]===null?<span style={{color:"var(--faint)"}}>—</span>:(k.includes("roas")?fmtPct(r[k],0):fmtM(r[k])))}</td>)}
       </tr>)}</tbody>
     </table></div></Card>
     <Card><CardHead title="Commentary"/>
