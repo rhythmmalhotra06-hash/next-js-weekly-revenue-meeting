@@ -187,7 +187,7 @@ const mkSeed = () => ({
   page_config:{ company_health:emptyPageCfg(), bu_performance:emptyPageCfg(), membership:emptyPageCfg(), pathways:emptyPageCfg(), masteries:emptyPageCfg(), events:emptyPageCfg(), states:emptyPageCfg(), product:emptyPageCfg(), action_items:emptyPageCfg(), meeting_notes:emptyPageCfg() },
 
   company_health:{
-    mtd_sales_actual:4500000, mtd_sales_target:5300000, week_actual:970000, week_target:1100000,
+    mtd_sales_actual:4500000, mtd_sales_target:5300000, mtd_sales_yoy:-13, week_actual:970000, week_target:1100000,
     cash_balance:9800000, cash_runway_months:1.4, cash_last_week:10900000,
     aer_actual:58, aer_target:65, ad_spend:1300000, adspend_pct:33.3, adspend_num:1500000,
     must_solve:[
@@ -199,7 +199,7 @@ const mkSeed = () => ({
       "Membership ARR: subscriber losses → ~$125K/month headwind into Q2 · ROAS recovery urgently needed",
       "Potential $3.5M additional cash risk if ROAS continues current trajectory"
     ],
-    rf:{sa:94,st:110,yoy:-13.3,gp:85.4,ea:10.2,ep:12.0,et:13.4,oa:63.5,op:74.5,ot:72.7,ada:26.7,adp:31.4,adly:32,adlyp:35.6,hcp:22.8,hct:20,ga:18.4,ni:3.75,nip:4.4,c:11.1,ct:16.5,cly:19.5}
+    rf:{period:"3+9",sa:94,st:110,yoy:-13.3,gp:85.4,gt:88,ea:10.2,ep:12.0,et:13.4,oa:63.5,op:74.5,ot:72.7,ada:26.7,adp:31.4,adly:32,adlyp:35.6,hcp:22.8,hct:20,ga:18.4,ni:3.75,nip:4.4,nit:5.0,c:11.1,ct:16.5,cly:19.5}
   },
 
   bu_performance:[
@@ -434,7 +434,7 @@ const SHead = ({ owner, title, cadence, editing, onEdit, onSave, onCancel }) => 
     </div>
   </div>
 );
-const Hero = ({ label, value, target, fmt="money", subtext, editing, onChange, onChangeTarget, glow=false, large=false }) => {
+const Hero = ({ label, value, target, fmt="money", subtext, editing, onChange, onChangeTarget, yoy, onChangeYoy, glow=false, large=false }) => {
   const fmter=fmt==="money"?fmtM:fmt==="pct"?fmtPct:fmtNum;
   const d=target!==undefined?delta(value,target):null;
   const st=status(d);
@@ -447,8 +447,8 @@ const Hero = ({ label, value, target, fmt="money", subtext, editing, onChange, o
   return (
     <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"16px",padding:large?"22px 24px":"18px 20px",...(glow&&st==="bad"?{boxShadow:"0 0 24px rgba(212,44,69,0.15)",borderColor:"rgba(212,44,69,0.22)"}:{})}}>
       <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px"}}>{label}</div>
-      {editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><NI value={value} onChange={onChange} prefix={fmt==="money"?"$":""} suffix={fmt==="pct"?"%":""}/>{target!==undefined&&onChangeTarget&&<div style={{fontSize:"12px",color:"var(--muted)"}}>vs target: <NI value={target} onChange={onChangeTarget} prefix={fmt==="money"?"$":""} suffix={fmt==="pct"?"%":""}/></div>}</div>
-      :<><div className="font-display" style={{fontSize:large?"40px":"34px",fontWeight:400,lineHeight:1,marginBottom:"8px",color:st==="bad"?"var(--red)":st==="warn"?"var(--amber)":"var(--text)"}}>{mainVal}</div><div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>{target&&<span className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>vs {fmter(target)}</span>}{d!==null&&<Dt delta={d}/>}{subtext&&<span style={{fontSize:"12px",color:"var(--muted)"}}>{subtext}</span>}</div></>}
+      {editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><NI value={value} onChange={onChange} prefix={fmt==="money"?"$":""} suffix={fmt==="pct"?"%":""}/>{target!==undefined&&onChangeTarget&&<div style={{fontSize:"12px",color:"var(--muted)"}}>vs target: <NI value={target} onChange={onChangeTarget} prefix={fmt==="money"?"$":""} suffix={fmt==="pct"?"%":""}/></div>}{yoy!==undefined&&onChangeYoy&&<div style={{fontSize:"12px",color:"var(--muted)"}}>YoY %: <NI value={yoy} onChange={onChangeYoy} suffix="%"/></div>}</div>
+      :<><div className="font-display" style={{fontSize:large?"40px":"34px",fontWeight:400,lineHeight:1,marginBottom:"8px",color:st==="bad"?"var(--red)":st==="warn"?"var(--amber)":"var(--text)"}}>{mainVal}</div><div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>{target&&<span className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>vs {fmter(target)}</span>}{d!==null&&<Dt delta={d}/>}{yoy!==undefined&&<span className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>YoY {parseFloat(yoy)>0?"+":""}{fmtPct(yoy)}</span>}{subtext&&<span style={{fontSize:"12px",color:"var(--muted)"}}>{subtext}</span>}</div></>}
     </div>
   );
 };
@@ -568,7 +568,7 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
   return <div className="fade-up">
     <SHead owner="Jill" title="Company Health" cadence="Weekly · Opens every meeting · Cash verdict in 5 KPIs" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
     <div className="rg-2" style={{gap:"14px",marginBottom:"14px"}}>
-      <Hero label="MTD Sales" value={ch.mtd_sales_actual} target={ch.mtd_sales_target} editing={editing} onChange={v=>set(["mtd_sales_actual"],v)} onChangeTarget={v=>set(["mtd_sales_target"],v)} glow large/>
+      <Hero label="MTD Sales" value={ch.mtd_sales_actual} target={ch.mtd_sales_target} editing={editing} onChange={v=>set(["mtd_sales_actual"],v)} onChangeTarget={v=>set(["mtd_sales_target"],v)} yoy={ch.mtd_sales_yoy} onChangeYoy={v=>set(["mtd_sales_yoy"],v)} glow large/>
       <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"16px",padding:"22px 24px"}}>
         <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px"}}>Cash Balance</div>
         {editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><NI value={ch.cash_balance} onChange={v=>set(["cash_balance"],v)} prefix="$"/><div style={{fontSize:"12px",color:"var(--muted)"}}>Runway: <NI value={ch.cash_runway_months} onChange={v=>set(["cash_runway_months"],v)} suffix="mo"/></div><div style={{fontSize:"12px",color:"var(--muted)"}}>Last week: <NI value={ch.cash_last_week} onChange={v=>set(["cash_last_week"],v)} prefix="$"/></div></div>
@@ -577,9 +577,9 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
     </div>
     <div className="rg-3" style={{gap:"14px",marginBottom:"20px"}}>
       <Hero label="Week vs Target" value={ch.week_actual} target={ch.week_target} editing={editing} onChange={v=>set(["week_actual"],v)} onChangeTarget={v=>set(["week_target"],v)} glow/>
-      <Hero label="Ads Efficiency Ratio" value={ch.aer_actual} target={ch.aer_target} fmt="pct" subtext={!editing?`Ad spend ${fmtM(ch.ad_spend)}`:null} editing={editing} onChange={v=>set(["aer_actual"],v)} onChangeTarget={v=>set(["aer_target"],v)}/>
+      <Hero label="MTD Paid Revenue / Adspend" value={ch.aer_actual} target={ch.aer_target} fmt="pct" subtext={!editing?`Ad spend ${fmtM(ch.ad_spend)}`:null} editing={editing} onChange={v=>set(["aer_actual"],v)} onChangeTarget={v=>set(["aer_target"],v)}/>
       <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:"16px",padding:"18px 20px"}}>
-        <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px"}}>Adspend / Sales</div>
+        <div style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px"}}>MTD Adspend / Sales</div>
         {editing?<NI value={ch.adspend_pct} onChange={v=>set(["adspend_pct"],v)} suffix="%"/>:<><div className="font-display" style={{fontSize:"34px",fontWeight:400,lineHeight:1,marginBottom:"8px"}}>{fmtPct(ch.adspend_pct)}</div><div className="font-mono" style={{fontSize:"12px",color:"var(--muted)"}}>{fmtM(ch.adspend_num)} / {fmtM(ch.mtd_sales_actual)}</div></>}
       </div>
     </div>
@@ -910,7 +910,8 @@ const Product = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment 
       {/* Left: Revenue – Refund – Retention */}
       <Card>
         <CardHead title="Revenue · Refund · Retention"/>
-        <div style={{padding:"12px"}}>
+        <div style={{padding:"12px",maxHeight:"380px",overflowY:"auto"}}>
+          <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:"12px"}}>
             <thead><tr style={{borderBottom:"2px solid var(--border)"}}>
               <th style={thStyleL}>Metric</th>
@@ -937,13 +938,15 @@ const Product = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment 
               </tr>
             ))}</tbody>
           </table>
+          </div>
           <p style={{fontSize:"11px",color:"var(--muted)",fontStyle:"italic",padding:"8px 0 0"}}>* Retention and refund data to be updated after day 21</p>
         </div>
       </Card>
       {/* Right: Checkout – Engagement – Transformation */}
       <Card>
         <CardHead title="Checkout · Engagement · Transformation"/>
-        <div style={{padding:"12px"}}>
+        <div style={{padding:"12px",maxHeight:"380px",overflowY:"auto"}}>
+          <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:"12px"}}>
             <thead><tr style={{borderBottom:"2px solid var(--border)"}}>
               <th style={thStyleL}>Metric</th>
@@ -970,12 +973,13 @@ const Product = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment 
               </tr>
             ))}</tbody>
           </table>
+          </div>
         </div>
       </Card>
     </div>
     {/* Initiatives table */}
     <Card><CardHead title="Key Product Initiatives" action={editing&&<Btn variant="ghost" size="sm" onClick={()=>set("initiatives",[...p.initiatives,{name:"",status:"amber",note:"",timeline:"",obj:""}])}><Plus size={12}/>Add</Btn>}/>
-      <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
+      <div style={{overflowX:"auto",overflowY:"auto",maxHeight:"480px"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
         <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["#","Initiative","Status","Note","Timeline","Objective"].map(h=><th key={h} style={{padding:"12px 14px",textAlign:h==="#"||h==="Initiative"||h==="Note"?"left":"center",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)"}}>{h}</th>)}</tr></thead>
         <tbody>{p.initiatives.map((it,i)=><tr key={i} style={{borderBottom:"1px solid var(--border)"}} className="ai-row">
           <td style={{padding:"14px",color:"var(--faint)",fontSize:"12px",fontFamily:"monospace",width:"28px"}}>{i+1}</td>
@@ -1243,7 +1247,7 @@ const ActionItems = ({ data, editing, onEdit, onSave, onCancel, onChange, onComm
         <div style={{fontSize:"10px",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"var(--muted)",marginBottom:"4px"}}>Priority {prio==="Critical"?"01":prio==="High"?"02":"03"}</div>
         <div style={{fontSize:"16px",fontWeight:600,color:prio==="Critical"?"var(--red)":prio==="High"?"var(--amber)":"var(--text)",marginBottom:"12px"}}>{emoji} {label}</div>
         {rows.length>0
-          ? <Card><div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
+          ? <Card><div style={{overflowX:"auto",overflowY:"auto",maxHeight:"560px"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
               <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["#","Action Item","Owner","Due","Priority","Status",""].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
               <tbody>{rows.map(it=><ItemRow key={it.id} it={it} editing={editing} updateItem={updateItem} confirmDel={confirmDel} setConfirmDel={setConfirmDel} deleteItem={deleteItem} itemIndex={ai.items.findIndex(x=>x.id===it.id)}/>)}</tbody>
             </table></div></Card>
