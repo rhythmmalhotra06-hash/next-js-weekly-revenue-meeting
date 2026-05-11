@@ -172,7 +172,7 @@ const lsDel = (k) => { try { localStorage.removeItem(k); } catch {} };
 // API helpers — Airtable-backed persistence
 const apiGet = async (path) => { try { const r=await fetch(path); return r.ok?r.json():null; } catch { return null; } };
 const apiPost = async (path,body) => { try { const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); return r.ok?r.json():null; } catch { return null; } };
-const apiPut = async (path,body) => { try { const r=await fetch(path,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); return r.ok; } catch { return false; } };
+const apiPut = async (path,body) => { try { const r=await fetch(path,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); if(!r.ok) return null; return await r.json(); } catch { return null; } };
 const apiDel = async (path) => { const r=await fetch(path,{method:"DELETE"}); if(!r.ok) throw new Error(await r.text()); return r; };
 
 const emptyPageCfg = () => ({ header_image:null, header_text:"", page_notes:"", page_notes_2:"" });
@@ -386,6 +386,8 @@ const hydrate = (remote) => {
   if (remote.label) merged.meeting_label = remote.label;
   return merged;
 };
+
+const mergeAirtableIds=(prevData,serverItems)=>{ if(!serverItems?.length) return prevData; const idMap=Object.fromEntries(serverItems.map(s=>[s.id,s._airtableId]).filter(([,v])=>v)); return {...prevData,action_items:{...prevData.action_items,items:(prevData.action_items?.items??[]).map(it=>idMap[it.id]?{...it,_airtableId:idMap[it.id]}:it)}}; };
 
 // ─────────────────────────────────────────────────────────
 // ATOMS
@@ -1503,6 +1505,7 @@ export default function App() {
   const localDirty=useRef(false); // true when local changes haven't been flushed to Airtable yet
   const prevItemsRef=useRef([]); // last server-confirmed action items — used to detect deletions
   const creating=useRef(false); // guard against concurrent createNewDraft calls
+  const suppressNextSave=useRef(false); // suppress one auto-save cycle after _airtableId merge
 
   // Detect mobile viewport
   useEffect(()=>{
@@ -1550,7 +1553,7 @@ export default function App() {
   const showFlash=()=>{ setFlash(true); setTimeout(()=>setFlash(false),1800); };
   const updateData=(path,value)=>setData(prev=>{ const next=JSON.parse(JSON.stringify(prev)); let c=next; for(let i=0;i<path.length-1;i++) c=c[path[i]]; c[path[path.length-1]]=value; return next; });
   const startEdit=(id)=>{ setDraftBak(JSON.parse(JSON.stringify(data))); setEditingSec(id); };
-  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); lsSet('mv2:dirty',true); if(draftRecordId){ const prevSnap=prevItemsRef.current; const curSnap=[...(data.action_items?.items??[])]; apiPut(`/api/meetings/${draftRecordId}`,{data,previousItems:prevSnap}).then(ok=>{ if(ok){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); } }); } setEditingSec(null); setDraftBak(null); showFlash(); };
+  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); lsSet('mv2:dirty',true); if(draftRecordId){ const prevSnap=prevItemsRef.current; const curSnap=[...(data.action_items?.items??[])]; apiPut(`/api/meetings/${draftRecordId}`,{data,previousItems:prevSnap}).then(result=>{ if(result){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); if(result.items){ suppressNextSave.current=true; setData(prev=>mergeAirtableIds(prev,result.items)); } } }); } setEditingSec(null); setDraftBak(null); showFlash(); };
 
   // Atomic import-from-transcript: append AI-extracted items + decisions and
   // immediately persist to localStorage + Airtable. Bypasses the 15s autosave
@@ -1572,7 +1575,7 @@ export default function App() {
       if(draftRecordId&&viewingId===null){
         clearTimeout(timer.current);
         clearTimeout(apiTimer.current);
-        const curSnap=[...(next.action_items?.items??[])]; apiPut(`/api/meetings/${draftRecordId}`,{data:next,previousItems:prevItemsRef.current}).then(ok=>{ if(ok){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); } });
+        const curSnap=[...(next.action_items?.items??[])]; apiPut(`/api/meetings/${draftRecordId}`,{data:next,previousItems:prevItemsRef.current}).then(result=>{ if(result){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); if(result.items){ suppressNextSave.current=true; setData(prev=>mergeAirtableIds(prev,result.items)); } } });
       }
       return next;
     });
@@ -1584,6 +1587,7 @@ export default function App() {
   // Draft auto-save: localStorage at 900ms, Airtable at 15s (skip when viewing past)
   useEffect(()=>{
     if(!ready||viewingId!==null) return;
+    if(suppressNextSave.current){ suppressNextSave.current=false; return; }
     localDirty.current=true; // mark unsaved local changes so poll won't overwrite them
     clearTimeout(timer.current);
     timer.current=setTimeout(()=>{
@@ -1593,8 +1597,8 @@ export default function App() {
       apiTimer.current=setTimeout(async()=>{
         if(draftRecordId){
           const prevSnap=prevItemsRef.current; const curSnap=[...(data.action_items?.items??[])];
-          const ok=await apiPut(`/api/meetings/${draftRecordId}`,{data,previousItems:prevSnap});
-          if(ok){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); } // only clear when Airtable confirmed
+          const result=await apiPut(`/api/meetings/${draftRecordId}`,{data,previousItems:prevSnap});
+          if(result){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); if(result.items){ suppressNextSave.current=true; setData(prev=>mergeAirtableIds(prev,result.items)); } } // only clear when Airtable confirmed
         }
       },15000);
     },900);
