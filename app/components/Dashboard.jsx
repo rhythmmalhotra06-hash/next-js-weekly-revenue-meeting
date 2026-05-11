@@ -396,13 +396,20 @@ const DotBadge = ({ val, c }) => {
   const dotColor=c==="green"?"var(--green)":c==="red"?"var(--red)":c==="amber"?"var(--amber)":val>0?"var(--green)":val<0?"var(--red)":"var(--muted)";
   return <span style={{display:"inline-flex",alignItems:"center",gap:"3px",fontSize:"12px",fontFamily:"ui-monospace,'SF Mono','Roboto Mono',Menlo,Consolas,monospace",color:"var(--text)"}}>{val>0?"+":""}{val.toFixed(1)}pp <span style={{color:dotColor,fontSize:"10px"}}>●</span></span>;
 };
-const NI = ({ value, onChange, prefix="", suffix="" }) => (
-  <span style={{display:"inline-flex",alignItems:"center",gap:"4px"}}>
-    {prefix&&<span style={{color:"var(--faint)",fontSize:"12px"}}>{prefix}</span>}
-    <input type="text" value={value??""} placeholder="—" onChange={e=>{ const v=e.target.value; if(v===""||v==="-"){onChange(v===""?null:v);return;} const n=parseFloat(v); onChange(isNaN(n)?v:n); }} style={{width:"80px",border:"1px solid rgba(122,18,212,0.35)",background:"rgba(122,18,212,0.08)",color:"var(--text)",borderRadius:"6px",padding:"4px 8px",fontFamily:"ui-monospace,'SF Mono','Roboto Mono',Menlo,Consolas,monospace",fontSize:"13px"}} />
-    {suffix&&<span style={{color:"var(--faint)",fontSize:"12px"}}>{suffix}</span>}
-  </span>
-);
+const NI = ({ value, onChange, prefix="", suffix="" }) => {
+  const [raw, setRaw] = useState(value != null ? String(value) : "");
+  const committed = useRef(value);
+  useEffect(() => {
+    if (value !== committed.current) { committed.current = value; setRaw(value != null ? String(value) : ""); }
+  }, [value]);
+  return (
+    <span style={{display:"inline-flex",alignItems:"center",gap:"4px"}}>
+      {prefix&&<span style={{color:"var(--faint)",fontSize:"12px"}}>{prefix}</span>}
+      <input type="text" value={raw} placeholder="—" onChange={e=>{ const v=e.target.value; setRaw(v); if(v===""||v==="-"){const out=v===""?null:v;committed.current=out;onChange(out);return;} if(v.endsWith(".")||v.endsWith("-")) return; const n=parseFloat(v); const out=isNaN(n)?v:n; committed.current=out; onChange(out); }} style={{width:"80px",border:"1px solid rgba(122,18,212,0.35)",background:"rgba(122,18,212,0.08)",color:"var(--text)",borderRadius:"6px",padding:"4px 8px",fontFamily:"ui-monospace,'SF Mono','Roboto Mono',Menlo,Consolas,monospace",fontSize:"13px"}} />
+      {suffix&&<span style={{color:"var(--faint)",fontSize:"12px"}}>{suffix}</span>}
+    </span>
+  );
+};
 const TI = ({ value, onChange, placeholder="", multi=false, style={} }) =>
   multi?<textarea value={value??""} placeholder={placeholder} rows={2} onChange={e=>onChange(e.target.value)} style={{width:"100%",resize:"vertical",...style}}/>:<input type="text" value={value??""} placeholder={placeholder} onChange={e=>onChange(e.target.value)} style={{width:"100%",...style}}/>;
 const Card = ({ children, style={} }) => <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:"16px",overflow:"hidden",...style}}>{children}</div>;
@@ -654,7 +661,7 @@ const BUPerformance = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
     <SHead owner="Jill" title="BU Performance Snapshot" cadence="Weekly · Whole-company verdict before BU walk-throughs · MTD only" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
     <Card><div style={{overflowX:"auto"}}>
       <table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
-        <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["BU","Target","Actual","$ Delta","% Delta","Status","YTD YoY","YTD EBITDA","FY EBITDA","Why / Risk + Mit"].map(h=><th key={h} style={{padding:"12px 14px",textAlign:h==="BU"||h==="Why / Risk + Mit"?"left":"right",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",whiteSpace:"nowrap"}}>{h}</th>)}</tr></thead>
+        <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["BU","Target","Actual","$ Delta","% Delta","Status","YTD YoY","YTD EBITDA","FY EBITDA","Why / Risk + Mit"].map(h=><th key={h} style={{padding:"12px 14px",textAlign:h==="BU"||h==="Why / Risk + Mit"?"left":"right",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",whiteSpace:"nowrap"}}>{h==="Status"?<span style={{display:"inline-flex",alignItems:"center",gap:"3px"}}>Status<span title="Green = within −5% of target · Amber = −5% to −15% · Red = worse than −15%" style={{cursor:"help",color:"var(--faint)",fontSize:"11px",fontWeight:400,textTransform:"none",letterSpacing:0}}>ⓘ</span></span>:h}</th>)}</tr></thead>
         <tbody>
           {rows.map((r,i)=>{ const d=delta(r.actual,r.target),dd=(parseFloat(r.actual)||0)-(parseFloat(r.target)||0),st=status(d); return (
             <tr key={i} className="ai-row" style={{borderBottom:"1px solid var(--border)"}}>
@@ -916,7 +923,7 @@ const Product = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment 
               <tr key={i} style={{borderBottom:"1px solid var(--border)"}} className="ai-row">
                 <td style={{padding:"7px 8px",color:"var(--muted)",fontSize:"12px"}}>{r.metric}</td>
                 <td style={{padding:"7px 6px",textAlign:"right",fontFamily:"ui-monospace,'SF Mono','Roboto Mono',Menlo,Consolas,monospace"}}>
-                  {editing?<NI value={r.actual} onChange={v=>{const n=[...p.revenue_refund_retention];n[i]={...n[i],actual:v};set("revenue_refund_retention",n);}} suffix="%"/>:(r.actual===null?<span style={{color:"var(--faint)"}}>TBD</span>:fmtPct(r.actual))}
+                  {(()=>{const isMoney=r.metric.includes("Revenue");return editing?<NI value={r.actual} onChange={v=>{const n=[...p.revenue_refund_retention];n[i]={...n[i],actual:v};set("revenue_refund_retention",n);}} prefix={isMoney?"$":""} suffix={isMoney?"":"%"}/>:(r.actual===null?<span style={{color:"var(--faint)"}}>TBD</span>:isMoney?fmtM(r.actual):fmtPct(r.actual));})()}
                 </td>
                 <td style={{padding:"7px 6px",textAlign:"right"}}>
                   {editing?<div style={{display:"flex",gap:"2px",alignItems:"center",justifyContent:"flex-end"}}><NI value={r.mom} onChange={v=>{const n=[...p.revenue_refund_retention];n[i]={...n[i],mom:v};set("revenue_refund_retention",n);}}/>{colPicker(r.mom_c,v=>{const n=[...p.revenue_refund_retention];n[i]={...n[i],mom_c:v};set("revenue_refund_retention",n);})}</div>:<DotBadge val={r.mom} c={r.mom_c}/>}
@@ -1481,7 +1488,7 @@ export default function App() {
   const showFlash=()=>{ setFlash(true); setTimeout(()=>setFlash(false),1800); };
   const updateData=(path,value)=>setData(prev=>{ const next=JSON.parse(JSON.stringify(prev)); let c=next; for(let i=0;i<path.length-1;i++) c=c[path[i]]; c[path[path.length-1]]=value; return next; });
   const startEdit=(id)=>{ setDraftBak(JSON.parse(JSON.stringify(data))); setEditingSec(id); };
-  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); if(draftRecordId){ apiPut(`/api/meetings/${draftRecordId}`,{data}); localDirty.current=false; lsDel('mv2:dirty'); } setEditingSec(null); setDraftBak(null); showFlash(); };
+  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); lsSet('mv2:dirty',true); if(draftRecordId){ apiPut(`/api/meetings/${draftRecordId}`,{data}).then(()=>{ localDirty.current=false; lsDel('mv2:dirty'); }); } setEditingSec(null); setDraftBak(null); showFlash(); };
 
   // Atomic import-from-transcript: append AI-extracted items + decisions and
   // immediately persist to localStorage + Airtable. Bypasses the 15s autosave
