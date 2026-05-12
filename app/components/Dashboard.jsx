@@ -203,10 +203,10 @@ const mkSeed = () => ({
   },
 
   bu_performance:[
-    {bu:"Membership",target:3300000,actual:2800000,yoy:-27,ytd_ebitda:46,fy_ebitda:32,why:"VSL ROAS 55% (tgt 95%); Pathway ROAS 19.6% (tgt 60%), refund 11.6%",risk:"Risk: ROAS slides, MRR erosion ~$125K/mo · Mit: creative refresh + funnel retest"},
-    {bu:"Academy",   target:1600000,actual:1500000,yoy:14, ytd_ebitda:30,fy_ebitda:44,why:"Clone AI launch only achieved $100K sales",risk:"Risk: Speaker fees structure profitability · Mit: Manifesting Mastery speaker fees decision"},
-    {bu:"Events",    target:312000, actual:219000, yoy:-58,ytd_ebitda:null,fy_ebitda:null,why:"Scaled from 60 first-class tickets to max 15",risk:"Risk: 16% MVU refund · Mit: push tickets + optimise cost + affiliate commission"},
-    {bu:"States",    target:29000,  actual:27000,  yoy:261,ytd_ebitda:-78,fy_ebitda:-98,why:"Ads paused · Relotting in-progress ETA May-26",risk:"Risk: 1 year inventory expiry · Mit: new ad pages and assets"}
+    {bu:"Membership",fm_target:3300000,week_target:825000,week_actual:700000,target:3300000,actual:2800000,yoy:-27,ytd_ebitda:46,fy_ebitda:32,why:"VSL ROAS 55% (tgt 95%); Pathway ROAS 19.6% (tgt 60%), refund 11.6%",risk:"Risk: ROAS slides, MRR erosion ~$125K/mo · Mit: creative refresh + funnel retest"},
+    {bu:"Academy",   fm_target:1600000,week_target:400000,week_actual:375000,target:1600000,actual:1500000,yoy:14, ytd_ebitda:30,fy_ebitda:44,why:"Clone AI launch only achieved $100K sales",risk:"Risk: Speaker fees structure profitability · Mit: Manifesting Mastery speaker fees decision"},
+    {bu:"Events",    fm_target:312000, week_target:null,   week_actual:null,  target:312000, actual:219000, yoy:-58,ytd_ebitda:null,fy_ebitda:null,why:"Scaled from 60 first-class tickets to max 15",risk:"Risk: 16% MVU refund · Mit: push tickets + optimise cost + affiliate commission"},
+    {bu:"States",    fm_target:29000,  week_target:null,   week_actual:null,  target:29000,  actual:27000,  yoy:261,ytd_ebitda:-78,fy_ebitda:-98,why:"Ads paused · Relotting in-progress ETA May-26",risk:"Risk: 1 year inventory expiry · Mit: new ad pages and assets"}
   ],
   bu_total:{target:5300000,actual:4500000,yoy:-13,ytd_ebitda:21,fy_ebitda:12},
   bu_insights:"",
@@ -284,10 +284,10 @@ const mkBlankSeed = () => {
       rf:{sa:null,st:null,yoy:null,gp:null,ea:null,ep:null,et:null,oa:null,op:null,ot:null,ada:null,adp:null,adly:null,adlyp:null,hcp:null,hct:null,ga:null,ni:null,nip:null,c:null,ct:null,cly:null}
     },
     bu_performance:[
-      {bu:"Membership",target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null,why:"",risk:""},
-      {bu:"Academy",   target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null,why:"",risk:""},
-      {bu:"Events",    target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null,why:"",risk:""},
-      {bu:"States",    target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null,why:"",risk:""}
+      {bu:"Membership",fm_target:null,week_target:null,week_actual:null,target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null,why:"",risk:""},
+      {bu:"Academy",   fm_target:null,week_target:null,week_actual:null,target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null,why:"",risk:""},
+      {bu:"Events",    fm_target:null,week_target:null,week_actual:null,target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null,why:"",risk:""},
+      {bu:"States",    fm_target:null,week_target:null,week_actual:null,target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null,why:"",risk:""}
     ],
     bu_total:{target:null,actual:null,yoy:null,ytd_ebitda:null,fy_ebitda:null},
     bu_insights:"",
@@ -677,39 +677,69 @@ const CompanyHealth = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
 // ─────────────────────────────────────────────────────────
 const BUPerformance = ({ data, editing, onEdit, onSave, onCancel, onChange, onComment }) => {
   const rows=data.bu_performance, total=data.bu_total;
-  const autoTarget=rows.reduce((s,r)=>s+(parseFloat(r.target)||0),0);
-  const autoActual=rows.reduce((s,r)=>s+(parseFloat(r.actual)||0),0);
+  const autoFmTarget   = rows.reduce((s,r)=>s+(parseFloat(r.fm_target)||0),0);
+  const autoWeekTarget = rows.reduce((s,r)=>s+(parseFloat(r.week_target)||0),0);
+  const autoWeekActual = rows.reduce((s,r)=>s+(parseFloat(r.week_actual)||0),0);
+  const autoMtdTarget  = rows.reduce((s,r)=>s+(parseFloat(r.target)||0),0);
+  const autoMtdActual  = rows.reduce((s,r)=>s+(parseFloat(r.actual)||0),0);
+  const grpBorder = "2px solid rgba(122,18,212,0.25)";
+  const headers = ["BU","FM Target","Wk Target","Wk Actual","$ Wk Δ","% Wk Δ","MTD Target","MTD Actual","$ MTD Δ","% MTD Δ","Status","YTD YoY","YTD EBITDA","FY EBITDA","Why / Risk + Mit"];
+  const hLeft = new Set(["BU","Why / Risk + Mit"]);
+  const hGroupStart = new Set(["Wk Target","MTD Target"]);
   return <div className="fade-up">
-    <SHead owner="Jill" title="BU Performance Snapshot" cadence="Weekly · Whole-company verdict before BU walk-throughs · MTD only" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
+    <SHead owner="Jill" title="BU Performance Snapshot" cadence="Weekly · Full-month target + weekly actuals + MTD status" editing={editing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}/>
     <Card><div style={{overflowX:"auto"}}>
       <table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
-        <thead><tr style={{borderBottom:"1px solid var(--border)"}}>{["BU","Target","Actual","$ Delta","% Delta","Status","YTD YoY","YTD EBITDA","FY EBITDA","Why / Risk + Mit"].map(h=><th key={h} style={{padding:"12px 14px",textAlign:h==="BU"||h==="Why / Risk + Mit"?"left":"right",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",whiteSpace:"nowrap"}}>{h==="Status"?<span style={{display:"inline-flex",alignItems:"center",gap:"3px"}}>Status<span title="Green = within −5% of target · Amber = −5% to −15% · Red = worse than −15%" style={{cursor:"help",color:"var(--faint)",fontSize:"11px",fontWeight:400,textTransform:"none",letterSpacing:0}}>ⓘ</span></span>:h}</th>)}</tr></thead>
+        <thead><tr style={{borderBottom:"1px solid var(--border)"}}>
+          {headers.map(h=><th key={h} style={{padding:"12px 14px",textAlign:hLeft.has(h)?"left":"right",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",whiteSpace:"nowrap",...(hGroupStart.has(h)?{borderLeft:grpBorder}:{})}}>
+            {h==="Status"?<span style={{display:"inline-flex",alignItems:"center",gap:"3px"}}>Status<span title="Green = within −5% of MTD target · Red = worse than −5%" style={{cursor:"help",color:"var(--faint)",fontSize:"11px",fontWeight:400,textTransform:"none",letterSpacing:0}}>ⓘ</span></span>:h}
+          </th>)}
+        </tr></thead>
         <tbody>
-          {rows.map((r,i)=>{ const d=delta(r.actual,r.target),dd=(parseFloat(r.actual)||0)-(parseFloat(r.target)||0),st=status(d); return (
+          {rows.map((r,i)=>{
+            const upd=(k,v)=>{const n=[...rows];n[i]={...n[i],[k]:v};onChange(["bu_performance"],n);};
+            const wkDd=(parseFloat(r.week_actual)||0)-(parseFloat(r.week_target)||0);
+            const mtdDd=(parseFloat(r.actual)||0)-(parseFloat(r.target)||0);
+            const mtdD=delta(r.actual,r.target), mtdSt=status(mtdD);
+            return (
             <tr key={i} className="ai-row" style={{borderBottom:"1px solid var(--border)"}}>
               <td style={{padding:"14px",fontFamily:"'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif",fontSize:"17px",fontWeight:700,letterSpacing:"-0.01em"}}>{r.bu}</td>
-              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.target} onChange={v=>{const n=[...rows];n[i]={...n[i],target:v};onChange(["bu_performance"],n);}} prefix="$"/>:fmtM(r.target)}</td>
-              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.actual} onChange={v=>{const n=[...rows];n[i]={...n[i],actual:v};onChange(["bu_performance"],n);}} prefix="$"/>:fmtM(r.actual)}</td>
-              <td style={{padding:"14px",textAlign:"right",color:dd<0?"var(--red)":"var(--green)"}} className="font-mono">{dd>=0?"+":"–"}{fmtM(Math.abs(dd))}</td>
-              <td style={{padding:"14px",textAlign:"right"}}><Dt delta={d}/></td>
-              <td style={{padding:"14px",textAlign:"right"}}><Pill label={st==="good"?"Green":"Red"} variant={st}/></td>
-              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.yoy} onChange={v=>{const n=[...rows];n[i]={...n[i],yoy:v};onChange(["bu_performance"],n);}} suffix="%"/>:fmtPct(r.yoy,0)}</td>
-              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.ytd_ebitda} onChange={v=>{const n=[...rows];n[i]={...n[i],ytd_ebitda:v};onChange(["bu_performance"],n);}} suffix="%"/>:(r.ytd_ebitda===null?"n.a":fmtPct(r.ytd_ebitda,0))}</td>
-              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.fy_ebitda} onChange={v=>{const n=[...rows];n[i]={...n[i],fy_ebitda:v};onChange(["bu_performance"],n);}} suffix="%"/>:(r.fy_ebitda===null?"n.a":fmtPct(r.fy_ebitda,0))}</td>
-              <td style={{padding:"14px",maxWidth:"240px"}}>{editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><TI value={r.why} onChange={v=>{const n=[...rows];n[i]={...n[i],why:v};onChange(["bu_performance"],n);}} multi/><TI value={r.risk} onChange={v=>{const n=[...rows];n[i]={...n[i],risk:v};onChange(["bu_performance"],n);}} multi/></div>:<><div style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.5}}>{r.why}</div><div style={{fontSize:"12px",color:"var(--faint)",marginTop:"4px"}}>{r.risk}</div></>}</td>
+              {/* FM Target */}
+              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.fm_target} onChange={v=>upd("fm_target",v)} prefix="$"/>:fmtM(r.fm_target)}</td>
+              {/* Weekly group */}
+              <td style={{padding:"14px",textAlign:"right",borderLeft:grpBorder}} className="font-mono">{editing?<NI value={r.week_target} onChange={v=>upd("week_target",v)} prefix="$"/>:fmtM(r.week_target)}</td>
+              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.week_actual} onChange={v=>upd("week_actual",v)} prefix="$"/>:fmtM(r.week_actual)}</td>
+              <td style={{padding:"14px",textAlign:"right",color:wkDd<0?"var(--red)":"var(--green)"}} className="font-mono">{wkDd>=0?"+":"–"}{fmtM(Math.abs(wkDd))}</td>
+              <td style={{padding:"14px",textAlign:"right"}}><Dt delta={delta(r.week_actual,r.week_target)}/></td>
+              {/* MTD group */}
+              <td style={{padding:"14px",textAlign:"right",borderLeft:grpBorder}} className="font-mono">{editing?<NI value={r.target} onChange={v=>upd("target",v)} prefix="$"/>:fmtM(r.target)}</td>
+              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.actual} onChange={v=>upd("actual",v)} prefix="$"/>:fmtM(r.actual)}</td>
+              <td style={{padding:"14px",textAlign:"right",color:mtdDd<0?"var(--red)":"var(--green)"}} className="font-mono">{mtdDd>=0?"+":"–"}{fmtM(Math.abs(mtdDd))}</td>
+              <td style={{padding:"14px",textAlign:"right"}}><Dt delta={mtdD}/></td>
+              <td style={{padding:"14px",textAlign:"right"}}><Pill label={mtdSt==="good"?"Green":"Red"} variant={mtdSt}/></td>
+              {/* YTD / EBITDA */}
+              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.yoy} onChange={v=>upd("yoy",v)} suffix="%"/>:fmtPct(r.yoy,0)}</td>
+              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.ytd_ebitda} onChange={v=>upd("ytd_ebitda",v)} suffix="%"/>:(r.ytd_ebitda===null?"n.a":fmtPct(r.ytd_ebitda,0))}</td>
+              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.fy_ebitda} onChange={v=>upd("fy_ebitda",v)} suffix="%"/>:(r.fy_ebitda===null?"n.a":fmtPct(r.fy_ebitda,0))}</td>
+              <td style={{padding:"14px",maxWidth:"240px"}}>{editing?<div style={{display:"flex",flexDirection:"column",gap:"6px"}}><TI value={r.why} onChange={v=>upd("why",v)} multi/><TI value={r.risk} onChange={v=>upd("risk",v)} multi/></div>:<><div style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.5}}>{r.why}</div><div style={{fontSize:"12px",color:"var(--faint)",marginTop:"4px"}}>{r.risk}</div></>}</td>
             </tr>
-          ); })}
+          );})}
           <tr style={{background:"rgba(122,18,212,0.08)"}}>
             <td style={{padding:"14px",fontFamily:"'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif",fontSize:"17px",fontWeight:700,letterSpacing:"-0.01em",color:"var(--purple2)"}}>Total Company</td>
-            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(autoTarget)}</td>
-            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(autoActual)}</td>
-            <td style={{padding:"14px",textAlign:"right",color:autoActual<autoTarget?"var(--red)":"var(--green)"}} className="font-mono">{autoActual>=autoTarget?"+":"–"}{fmtM(Math.abs(autoActual-autoTarget))}</td>
-            <td style={{padding:"14px",textAlign:"right"}}><Dt delta={delta(autoActual,autoTarget)}/></td>
-            <td style={{padding:"14px",textAlign:"right"}}><Pill label={status(delta(autoActual,autoTarget))==="good"?"Green":"Red"} variant={status(delta(autoActual,autoTarget))}/></td>
+            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(autoFmTarget)}</td>
+            <td style={{padding:"14px",textAlign:"right",borderLeft:grpBorder}} className="font-mono">{fmtM(autoWeekTarget)}</td>
+            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(autoWeekActual)}</td>
+            <td style={{padding:"14px",textAlign:"right",color:autoWeekActual<autoWeekTarget?"var(--red)":"var(--green)"}} className="font-mono">{autoWeekActual>=autoWeekTarget?"+":"–"}{fmtM(Math.abs(autoWeekActual-autoWeekTarget))}</td>
+            <td style={{padding:"14px",textAlign:"right"}}><Dt delta={delta(autoWeekActual,autoWeekTarget)}/></td>
+            <td style={{padding:"14px",textAlign:"right",borderLeft:grpBorder}} className="font-mono">{fmtM(autoMtdTarget)}</td>
+            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(autoMtdActual)}</td>
+            <td style={{padding:"14px",textAlign:"right",color:autoMtdActual<autoMtdTarget?"var(--red)":"var(--green)"}} className="font-mono">{autoMtdActual>=autoMtdTarget?"+":"–"}{fmtM(Math.abs(autoMtdActual-autoMtdTarget))}</td>
+            <td style={{padding:"14px",textAlign:"right"}}><Dt delta={delta(autoMtdActual,autoMtdTarget)}/></td>
+            <td style={{padding:"14px",textAlign:"right"}}><Pill label={status(delta(autoMtdActual,autoMtdTarget))==="good"?"Green":"Red"} variant={status(delta(autoMtdActual,autoMtdTarget))}/></td>
             <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={total.yoy} onChange={v=>onChange(["bu_total","yoy"],v)} suffix="%"/>:fmtPct(total.yoy,0)}</td>
             <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={total.ytd_ebitda} onChange={v=>onChange(["bu_total","ytd_ebitda"],v)} suffix="%"/>:fmtPct(total.ytd_ebitda,0)}</td>
             <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={total.fy_ebitda} onChange={v=>onChange(["bu_total","fy_ebitda"],v)} suffix="%"/>:fmtPct(total.fy_ebitda,0)}</td>
-            <td style={{padding:"14px",fontSize:"10px",color:"var(--faint)",fontStyle:"italic"}}>Target & Actual auto-sum from BU rows</td>
+            <td style={{padding:"14px",fontSize:"10px",color:"var(--faint)",fontStyle:"italic"}}>All values auto-sum from BU rows</td>
           </tr>
         </tbody>
       </table>
