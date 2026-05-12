@@ -217,6 +217,11 @@ export async function getMeetingById(recordId: string) {
   const linkedIds: string[] = data.fields["Action Items"] ?? [];
   if (linkedIds.length > 0) {
     meeting.action_items.items = await fetchActionItemsByIds(linkedIds);
+    meeting.action_items.next_id =
+      meeting.action_items.items.length > 0
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? Math.max(...meeting.action_items.items.map((i: any) => Number(i.id ?? 0))) + 1
+        : 1;
   }
   return meeting;
 }

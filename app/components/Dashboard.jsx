@@ -374,7 +374,7 @@ const hydrate = (remote) => {
       // shallow merge but never overwrite a seed value with null/undefined from remote
       const sub = { ...seed[k] };
       for (const [sk, sv] of Object.entries(v)) {
-        if (sv !== null && sv !== undefined) sub[sk] = sv;
+        if (sv !== undefined) sub[sk] = sv;
       }
       merged[k] = sub;
     } else {
