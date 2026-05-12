@@ -683,7 +683,9 @@ const BUPerformance = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
   const autoMtdTarget  = rows.reduce((s,r)=>s+(parseFloat(r.target)||0),0);
   const autoMtdActual  = rows.reduce((s,r)=>s+(parseFloat(r.actual)||0),0);
   const grpBorder = "2px solid rgba(122,18,212,0.25)";
-  const headers = ["BU","FM Target","Wk Target","Wk Actual","$ Wk Δ","% Wk Δ","MTD Target","MTD Actual","$ MTD Δ","% MTD Δ","Status","YTD YoY","YTD EBITDA","FY EBITDA","Why / Risk + Mit"];
+  const hasFmData   = editing || rows.some(r=>r.fm_target!=null);
+  const hasWeekData = editing || rows.some(r=>r.week_target!=null||r.week_actual!=null);
+  const headers = ["BU",...(hasFmData?["FM Target"]:[]),...(hasWeekData?["Wk Target","Wk Actual","$ Wk Δ","% Wk Δ"]:[]),"MTD Target","MTD Actual","$ MTD Δ","% MTD Δ","Status","YTD YoY","YTD EBITDA","FY EBITDA","Why / Risk + Mit"];
   const hLeft = new Set(["BU","Why / Risk + Mit"]);
   const hGroupStart = new Set(["Wk Target","MTD Target"]);
   return <div className="fade-up">
@@ -691,7 +693,7 @@ const BUPerformance = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
     <Card><div style={{overflowX:"auto"}}>
       <table style={{width:"100%",borderCollapse:"collapse",fontSize:"13px"}}>
         <thead><tr style={{borderBottom:"1px solid var(--border)"}}>
-          {headers.map(h=><th key={h} style={{padding:"12px 14px",textAlign:hLeft.has(h)?"left":"right",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",whiteSpace:"nowrap",...(hGroupStart.has(h)?{borderLeft:grpBorder}:{})}}>
+          {headers.map(h=><th key={h} style={{padding:"12px 14px",textAlign:hLeft.has(h)?"left":"right",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"var(--muted)",whiteSpace:"nowrap",...(hGroupStart.has(h)?{borderLeft:grpBorder}:{}),...(h==="BU"?{position:"sticky",left:0,zIndex:2,background:"var(--card)"}:{})}}>
             {h==="Status"?<span style={{display:"inline-flex",alignItems:"center",gap:"3px"}}>Status<span title="Green = within −5% of MTD target · Red = worse than −5%" style={{cursor:"help",color:"var(--faint)",fontSize:"11px",fontWeight:400,textTransform:"none",letterSpacing:0}}>ⓘ</span></span>:h}
           </th>)}
         </tr></thead>
@@ -703,14 +705,14 @@ const BUPerformance = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
             const mtdD=delta(r.actual,r.target), mtdSt=status(mtdD);
             return (
             <tr key={i} className="ai-row" style={{borderBottom:"1px solid var(--border)"}}>
-              <td style={{padding:"14px",fontFamily:"'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif",fontSize:"17px",fontWeight:700,letterSpacing:"-0.01em"}}>{r.bu}</td>
+              <td style={{padding:"14px",fontFamily:"'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif",fontSize:"17px",fontWeight:700,letterSpacing:"-0.01em",position:"sticky",left:0,zIndex:1,background:"var(--card)"}}>{r.bu}</td>
               {/* FM Target */}
-              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.fm_target} onChange={v=>upd("fm_target",v)} prefix="$"/>:fmtM(r.fm_target)}</td>
+              {hasFmData&&<td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.fm_target} onChange={v=>upd("fm_target",v)} prefix="$"/>:fmtM(r.fm_target)}</td>}
               {/* Weekly group */}
-              <td style={{padding:"14px",textAlign:"right",borderLeft:grpBorder}} className="font-mono">{editing?<NI value={r.week_target} onChange={v=>upd("week_target",v)} prefix="$"/>:fmtM(r.week_target)}</td>
-              <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.week_actual} onChange={v=>upd("week_actual",v)} prefix="$"/>:fmtM(r.week_actual)}</td>
-              <td style={{padding:"14px",textAlign:"right",color:wkDd<0?"var(--red)":"var(--green)"}} className="font-mono">{wkDd>=0?"+":"–"}{fmtM(Math.abs(wkDd))}</td>
-              <td style={{padding:"14px",textAlign:"right"}}><Dt delta={delta(r.week_actual,r.week_target)}/></td>
+              {hasWeekData&&<td style={{padding:"14px",textAlign:"right",borderLeft:grpBorder}} className="font-mono">{editing?<NI value={r.week_target} onChange={v=>upd("week_target",v)} prefix="$"/>:fmtM(r.week_target)}</td>}
+              {hasWeekData&&<td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.week_actual} onChange={v=>upd("week_actual",v)} prefix="$"/>:fmtM(r.week_actual)}</td>}
+              {hasWeekData&&<td style={{padding:"14px",textAlign:"right",color:wkDd<0?"var(--red)":"var(--green)"}} className="font-mono">{wkDd>=0?"+":"–"}{fmtM(Math.abs(wkDd))}</td>}
+              {hasWeekData&&<td style={{padding:"14px",textAlign:"right"}}><Dt delta={delta(r.week_actual,r.week_target)}/></td>}
               {/* MTD group */}
               <td style={{padding:"14px",textAlign:"right",borderLeft:grpBorder}} className="font-mono">{editing?<NI value={r.target} onChange={v=>upd("target",v)} prefix="$"/>:fmtM(r.target)}</td>
               <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{editing?<NI value={r.actual} onChange={v=>upd("actual",v)} prefix="$"/>:fmtM(r.actual)}</td>
@@ -725,12 +727,12 @@ const BUPerformance = ({ data, editing, onEdit, onSave, onCancel, onChange, onCo
             </tr>
           );})}
           <tr style={{background:"rgba(122,18,212,0.08)"}}>
-            <td style={{padding:"14px",fontFamily:"'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif",fontSize:"17px",fontWeight:700,letterSpacing:"-0.01em",color:"var(--purple2)"}}>Total Company</td>
-            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(autoFmTarget)}</td>
-            <td style={{padding:"14px",textAlign:"right",borderLeft:grpBorder}} className="font-mono">{fmtM(autoWeekTarget)}</td>
-            <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(autoWeekActual)}</td>
-            <td style={{padding:"14px",textAlign:"right",color:autoWeekActual<autoWeekTarget?"var(--red)":"var(--green)"}} className="font-mono">{autoWeekActual>=autoWeekTarget?"+":"–"}{fmtM(Math.abs(autoWeekActual-autoWeekTarget))}</td>
-            <td style={{padding:"14px",textAlign:"right"}}><Dt delta={delta(autoWeekActual,autoWeekTarget)}/></td>
+            <td style={{padding:"14px",fontFamily:"'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif",fontSize:"17px",fontWeight:700,letterSpacing:"-0.01em",color:"var(--purple2)",position:"sticky",left:0,zIndex:1,background:"rgba(122,18,212,0.08)"}}>Total Company</td>
+            {hasFmData&&<td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(autoFmTarget)}</td>}
+            {hasWeekData&&<td style={{padding:"14px",textAlign:"right",borderLeft:grpBorder}} className="font-mono">{fmtM(autoWeekTarget)}</td>}
+            {hasWeekData&&<td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(autoWeekActual)}</td>}
+            {hasWeekData&&<td style={{padding:"14px",textAlign:"right",color:autoWeekActual<autoWeekTarget?"var(--red)":"var(--green)"}} className="font-mono">{autoWeekActual>=autoWeekTarget?"+":"–"}{fmtM(Math.abs(autoWeekActual-autoWeekTarget))}</td>}
+            {hasWeekData&&<td style={{padding:"14px",textAlign:"right"}}><Dt delta={delta(autoWeekActual,autoWeekTarget)}/></td>}
             <td style={{padding:"14px",textAlign:"right",borderLeft:grpBorder}} className="font-mono">{fmtM(autoMtdTarget)}</td>
             <td style={{padding:"14px",textAlign:"right"}} className="font-mono">{fmtM(autoMtdActual)}</td>
             <td style={{padding:"14px",textAlign:"right",color:autoMtdActual<autoMtdTarget?"var(--red)":"var(--green)"}} className="font-mono">{autoMtdActual>=autoMtdTarget?"+":"–"}{fmtM(Math.abs(autoMtdActual-autoMtdTarget))}</td>
