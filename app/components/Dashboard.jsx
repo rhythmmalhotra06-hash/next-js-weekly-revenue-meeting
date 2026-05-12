@@ -1594,7 +1594,7 @@ export default function App() {
           const result=await apiPut(`/api/meetings/${draftRecordId}`,{data,previousItems:prevSnap});
           if(result){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); if(result.items){ suppressNextSave.current=true; setData(prev=>mergeAirtableIds(prev,result.items)); } } // only clear when Airtable confirmed
         }
-      },15000);
+      },5000);
     },900);
   },[data,ready,viewingId,draftRecordId]);
 
@@ -1611,6 +1611,26 @@ export default function App() {
     },5000);
     return ()=>clearInterval(interval);
   },[ready,draftRecordId,editingSec,viewingId]);
+
+  // Flush unsaved changes to Airtable when the page is hidden or closed
+  useEffect(()=>{
+    if(!ready||!draftRecordId) return;
+    const flush=()=>{
+      if(!localDirty.current) return;
+      const d=dataRef.current;
+      if(!d) return;
+      fetch(`/api/meetings/${draftRecordId}`,{
+        method:"PUT",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({data:d,previousItems:prevItemsRef.current}),
+        keepalive:true,
+      }).then(r=>{ if(r.ok){ localDirty.current=false; lsDel('mv2:dirty'); } }).catch(()=>{});
+    };
+    const onVisibility=()=>{ if(document.visibilityState==="hidden") flush(); };
+    document.addEventListener("visibilitychange",onVisibility);
+    window.addEventListener("beforeunload",flush);
+    return ()=>{ document.removeEventListener("visibilitychange",onVisibility); window.removeEventListener("beforeunload",flush); };
+  },[ready,draftRecordId]);
 
   const saveMeeting=async()=>{
     if(!draftRecordId) return;
