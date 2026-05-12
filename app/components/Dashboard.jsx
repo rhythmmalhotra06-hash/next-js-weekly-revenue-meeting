@@ -1518,6 +1518,7 @@ export default function App() {
   const [presentMode,setPresentMode]=useState(false);
   const [ready,setReady]=useState(false);
   const [flash,setFlash]=useState(false);
+  const [saveError,setSaveError]=useState(false);
   const [theme,setTheme]=useState("light");
   const [draftRecordId,setDraftRecordId]=useState(null);
   const [viewingId,setViewingId]=useState(null); // null=draft, recordId=viewing past meeting
@@ -1577,7 +1578,7 @@ export default function App() {
   const showFlash=()=>{ setFlash(true); setTimeout(()=>setFlash(false),1800); };
   const updateData=(path,value)=>setData(prev=>{ const next=JSON.parse(JSON.stringify(prev)); let c=next; for(let i=0;i<path.length-1;i++) c=c[path[i]]; c[path[path.length-1]]=value; return next; });
   const startEdit=(id)=>{ setDraftBak(JSON.parse(JSON.stringify(data))); setEditingSec(id); };
-  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); lsSet('mv2:dirty',true); if(draftRecordId){ const prevSnap=prevItemsRef.current; const curSnap=[...(data.action_items?.items??[])]; apiPut(`/api/meetings/${draftRecordId}`,{data,previousItems:prevSnap}).then(result=>{ if(result){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); if(result.items){ suppressNextSave.current=true; setData(prev=>mergeAirtableIds(prev,result.items)); } } }); } setEditingSec(null); setDraftBak(null); showFlash(); };
+  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); lsSet('mv2:dirty',true); if(draftRecordId){ const prevSnap=prevItemsRef.current; const curSnap=[...(data.action_items?.items??[])]; apiPut(`/api/meetings/${draftRecordId}`,{data,previousItems:prevSnap}).then(result=>{ if(result){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); showFlash(); if(result.items){ suppressNextSave.current=true; setData(prev=>mergeAirtableIds(prev,result.items)); } } else { setSaveError(true); setTimeout(()=>setSaveError(false),4000); } }); } else { showFlash(); } setEditingSec(null); setDraftBak(null); };
 
   // Atomic import-from-transcript: append AI-extracted items + decisions and
   // immediately persist to localStorage + Airtable. Bypasses the 15s autosave
@@ -1624,7 +1625,7 @@ export default function App() {
           const result=await apiPut(`/api/meetings/${draftRecordId}`,{data,previousItems:prevSnap});
           if(result){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); if(result.items){ suppressNextSave.current=true; setData(prev=>mergeAirtableIds(prev,result.items)); } } // only clear when Airtable confirmed
         }
-      },5000);
+      },1500);
     },900);
   },[data,ready,viewingId,draftRecordId]);
 
@@ -1814,8 +1815,9 @@ export default function App() {
           </div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-          <span role="status" aria-live="polite" className="sr-only">{flash?"Saved":""}</span>
+          <span role="status" aria-live="polite" className="sr-only">{flash?"Saved":saveError?"Save failed":""}</span>
           {!isMobile&&flash&&<span aria-hidden="true" style={{fontSize:"12px",color:"var(--green)",fontWeight:600,display:"flex",alignItems:"center",gap:"4px"}}><Check size={12}/>Saved</span>}
+          {!isMobile&&saveError&&<span aria-hidden="true" style={{fontSize:"12px",color:"var(--red)",fontWeight:600,display:"flex",alignItems:"center",gap:"4px"}}>⚠ Save failed — retry</span>}
           {!isMobile&&<button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")} title="Toggle light/dark" style={{background:"var(--card)",border:"1px solid var(--border)",color:"var(--text)",borderRadius:"8px",width:"34px",height:"34px",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>{theme==="dark"?<Sun size={15}/>:<Moon size={15}/>}</button>}
           {!isMobile&&<Btn variant="ghost" size="sm" onClick={()=>setPresentMode(!presentMode)}>{presentMode?<EyeOff size={13}/>:<Presentation size={13}/>}{presentMode?"Exit":"Present"}</Btn>}
           {!isMobile&&<Btn variant="ghost" size="sm" onClick={()=>setShowHistory(true)}><History size={13}/>History ({meetings.length})</Btn>}
