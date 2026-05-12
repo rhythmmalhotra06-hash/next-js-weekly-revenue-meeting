@@ -1531,6 +1531,7 @@ export default function App() {
   const prevItemsRef=useRef([]); // last server-confirmed action items — used to detect deletions
   const creating=useRef(false); // guard against concurrent createNewDraft calls
   const suppressNextSave=useRef(false); // suppress one auto-save cycle after _airtableId merge
+  const saveEpoch=useRef(0); // incremented on each new save cycle; stale callbacks skip dirty-clear
 
   // Detect mobile viewport
   useEffect(()=>{
@@ -1578,7 +1579,7 @@ export default function App() {
   const showFlash=()=>{ setFlash(true); setTimeout(()=>setFlash(false),1800); };
   const updateData=(path,value)=>setData(prev=>{ const next=JSON.parse(JSON.stringify(prev)); let c=next; for(let i=0;i<path.length-1;i++) c=c[path[i]]; c[path[path.length-1]]=value; return next; });
   const startEdit=(id)=>{ setDraftBak(JSON.parse(JSON.stringify(data))); setEditingSec(id); };
-  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); lsSet('mv2:dirty',true); if(draftRecordId){ const prevSnap=prevItemsRef.current; const curSnap=[...(data.action_items?.items??[])]; apiPut(`/api/meetings/${draftRecordId}`,{data,previousItems:prevSnap}).then(result=>{ if(result){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); showFlash(); if(result.items){ suppressNextSave.current=true; setData(prev=>mergeAirtableIds(prev,result.items)); } } else { setSaveError(true); setTimeout(()=>setSaveError(false),4000); } }); } else { showFlash(); } setEditingSec(null); setDraftBak(null); };
+  const saveEdit=()=>{ clearTimeout(timer.current); clearTimeout(apiTimer.current); lsSet('mv2:draft',data); lsSet('mv2:dirty',true); if(draftRecordId){ const myEpoch=++saveEpoch.current; const prevSnap=prevItemsRef.current; const curSnap=[...(data.action_items?.items??[])]; apiPut(`/api/meetings/${draftRecordId}`,{data,previousItems:prevSnap}).then(result=>{ if(result&&myEpoch===saveEpoch.current){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); showFlash(); if(result.items){ suppressNextSave.current=true; setData(prev=>mergeAirtableIds(prev,result.items)); } } else if(!result){ setSaveError(true); setTimeout(()=>setSaveError(false),4000); } }); } else { showFlash(); } setEditingSec(null); setDraftBak(null); };
 
   // Atomic import-from-transcript: append AI-extracted items + decisions and
   // immediately persist to localStorage + Airtable. Bypasses the 15s autosave
@@ -1600,7 +1601,7 @@ export default function App() {
       if(draftRecordId&&viewingId===null){
         clearTimeout(timer.current);
         clearTimeout(apiTimer.current);
-        const curSnap=[...(next.action_items?.items??[])]; apiPut(`/api/meetings/${draftRecordId}`,{data:next,previousItems:prevItemsRef.current}).then(result=>{ if(result){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); if(result.items){ suppressNextSave.current=true; setData(prev=>mergeAirtableIds(prev,result.items)); } } });
+        const importEpoch=++saveEpoch.current; const curSnap=[...(next.action_items?.items??[])]; apiPut(`/api/meetings/${draftRecordId}`,{data:next,previousItems:prevItemsRef.current}).then(result=>{ if(result&&importEpoch===saveEpoch.current){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); if(result.items){ suppressNextSave.current=true; setData(prev=>mergeAirtableIds(prev,result.items)); } } });
       }
       return next;
     });
@@ -1614,6 +1615,7 @@ export default function App() {
     if(!ready||viewingId!==null) return;
     if(suppressNextSave.current){ suppressNextSave.current=false; return; }
     localDirty.current=true; // mark unsaved local changes so poll won't overwrite them
+    const myEpoch=++saveEpoch.current; // snapshot epoch — only clear dirty if no newer save starts
     clearTimeout(timer.current);
     timer.current=setTimeout(()=>{
       lsSet('mv2:draft',data);
@@ -1623,7 +1625,7 @@ export default function App() {
         if(draftRecordId){
           const prevSnap=prevItemsRef.current; const curSnap=[...(data.action_items?.items??[])];
           const result=await apiPut(`/api/meetings/${draftRecordId}`,{data,previousItems:prevSnap});
-          if(result){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); if(result.items){ suppressNextSave.current=true; setData(prev=>mergeAirtableIds(prev,result.items)); } } // only clear when Airtable confirmed
+          if(result&&myEpoch===saveEpoch.current){ prevItemsRef.current=curSnap; localDirty.current=false; lsDel('mv2:dirty'); if(result.items){ suppressNextSave.current=true; setData(prev=>mergeAirtableIds(prev,result.items)); } } // only clear when Airtable confirmed AND no newer save is pending
         }
       },1500);
     },900);
