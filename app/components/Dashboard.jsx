@@ -1548,7 +1548,7 @@ export default function App() {
 
     // Current draft = Draft record whose meeting date >= today (take the earliest upcoming)
     const draftSummary=Array.isArray(allMeetings)
-      ?allMeetings.filter(m=>m.status==='Draft'&&(!m.date||m.date>=today)).sort((a,b)=>a.date>b.date?1:-1)[0]
+      ?allMeetings.filter(m=>m.status==='Draft').sort((a,b)=>a.date<b.date?1:-1)[0]
       :null;
 
     if(draftSummary){
