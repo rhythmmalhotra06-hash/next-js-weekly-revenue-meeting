@@ -1635,9 +1635,13 @@ export default function App() {
     const interval=setInterval(async()=>{
       if(editingSec!==null||localDirty.current) return; // skip if user has unpushed changes
       const remote=await apiGet(`/api/meetings/${draftRecordId}`);
-      if(remote&&!remote.error&&JSON.stringify(remote)!==JSON.stringify(dataRef.current)){
-        setData(hydrate(remote));
-        showFlash();
+      if(remote&&!remote.error){
+        const hydratedRemote=hydrate(remote);
+        if(JSON.stringify(hydratedRemote)!==JSON.stringify(dataRef.current)){
+          suppressNextSave.current=true;
+          setData(hydratedRemote);
+          showFlash();
+        }
       }
     },5000);
     return ()=>clearInterval(interval);
